@@ -23,7 +23,7 @@ db.once('open',function()
 	
 });
 if (!process.env.clientId || !process.env.clientSecret || !process.env.PORT ||!process.env.botToken) {
-  console.log("please provide required envs");
+  usage_tip();
   // process.exit(1);
 }
 
