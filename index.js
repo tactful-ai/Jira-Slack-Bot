@@ -3,11 +3,11 @@
 var request = require("request");
 var fs = require('fs');
 //Create Issue
-exports.CreatIssue =function (projectName, summary, description, issuetype)
+exports.CreatIssue =function (projectName, summary, description, issuetype, domain, Token)
 {
     request({
-        headers:{Authorization:'Basic bWFyeWFtbWVoYWJAZ21haWwuY29tOmROYWdqelRyQWlrMDV0blMyY2E1QjE5QQ=='},
-      uri: `https://jirabottac.atlassian.net/rest/api/2/issue`,
+        headers:{Authorization: Token},
+      uri: `https://${domain}.atlassian.net/rest/api/2/issue`,
         body:{
         "fields": {
           "project":
@@ -45,11 +45,11 @@ exports.CreatIssue =function (projectName, summary, description, issuetype)
     });
 }
 //Delete Issue
-exports.DeleteIssue = function (IssueID)
+exports.DeleteIssue = function (IssueID, domain, Token)
 {
     request({
-        headers:{Authorization:'Basic bWFyeWFtbWVoYWJAZ21haWwuY29tOmROYWdqelRyQWlrMDV0blMyY2E1QjE5QQ=='},
-      uri: `https://jirabottac.atlassian.net/rest/api/2/issue/${IssueID}`,
+        headers:{Authorization: Token },
+      uri: `https://${domain}.atlassian.net/rest/api/2/issue/${IssueID}`,
       method: 'DELETE',
       json: true
     }, function(error, response, body) {
@@ -73,11 +73,11 @@ exports.DeleteIssue = function (IssueID)
 
 }
 //Add Comment
-exports.AddComment =function (IssueID, comment, callback)
+exports.AddComment =function (IssueID, comment, domain, Token)
 {
     request({
-        headers:{Authorization:'Basic bWFyeWFtbWVoYWJAZ21haWwuY29tOmROYWdqelRyQWlrMDV0blMyY2E1QjE5QQ=='},
-      uri: `https://jirabottac.atlassian.net/rest/api/2/issue/${IssueID}/comment`,
+        headers:{Authorization: Token },
+      uri: `https://${domain}.atlassian.net/rest/api/2/issue/${IssueID}/comment`,
       body: {
         "body": comment
       },
@@ -103,11 +103,11 @@ exports.AddComment =function (IssueID, comment, callback)
     });
 }
 //Delete Comment
-exports.DeleteComment = function (IssueID, CommentID)
+exports.DeleteComment = function (IssueID, CommentID, domain, Token)
 {
     request({
-        headers:{Authorization:'Basic bWFyeWFtbWVoYWJAZ21haWwuY29tOmROYWdqelRyQWlrMDV0blMyY2E1QjE5QQ=='},
-      uri: `https://jirabottac.atlassian.net/rest/api/2/issue/${IssueID}/comment/${CommentID}`,
+        headers:{Authorization: Token},
+      uri: `https://${domain}.atlassian.net/rest/api/2/issue/${IssueID}/comment/${CommentID}`,
       method: 'DELETE',
       json: true
     }, function(error, response, body) {
@@ -129,11 +129,11 @@ exports.DeleteComment = function (IssueID, CommentID)
     });
 }
 //Edit Comment
-exports.EditComment = function (IssueID, CommentID, UpdatedComment)
+exports.EditComment = function (IssueID, CommentID, UpdatedComment, domain, Token)
 {
     request({
-        headers:{Authorization:'Basic bWFyeWFtbWVoYWJAZ21haWwuY29tOmROYWdqelRyQWlrMDV0blMyY2E1QjE5QQ=='},
-      uri: `https://jirabottac.atlassian.net/rest/api/2/issue/${IssueID}/comment/${CommentID}`,
+        headers:{Authorization: Token },
+      uri: `https://${domain}.atlassian.net/rest/api/2/issue/${IssueID}/comment/${CommentID}`,
       method: 'PUT',
       body: {
         "body": UpdatedComment
@@ -160,16 +160,16 @@ exports.EditComment = function (IssueID, CommentID, UpdatedComment)
 
 }
 //Add Attachment
-exports.AddAttachment = function (IssueID, Attachment){
+exports.AddAttachment = function (IssueID, Attachment, domain, Token){
     var formData = {
       file: fs.createReadStream(Attachment),
     };
     
     request({
-      headers:{Authorization:'Basic bWFyeWFtbWVoYWJAZ21haWwuY29tOmROYWdqelRyQWlrMDV0blMyY2E1QjE5QQ==',
+      headers:{Authorization: Token,
       'X-Atlassian-Token': 'no-check'
   },
-        uri:`https://jirabottac.atlassian.net/rest/api/2/issue/${IssueID}/attachments`,
+        uri:`https://${domain}.atlassian.net/rest/api/2/issue/${IssueID}/attachments`,
          formData: formData,
         method :'POST',
         json: true
@@ -180,9 +180,9 @@ exports.AddAttachment = function (IssueID, Attachment){
       console.log('Upload successful!',response);
     });
   }
-//CreatIssue ("MM", "BUG", "ai7aga", "Bug");
-//DeleteIssue("MM-28");
-//AddComment("MM-29","eslam");
-//EditComment("MM-29","10025","islam");
+//CreatIssue ("MM", "BUG", "ai7aga", "Bug", "jirabottac", "Basic bWFyeWFtbWVoYWJAZ21haWwuY29tOmROYWdqelRyQWlrMDV0blMyY2E1QjE5QQ==");
+//DeleteIssue("MM-28", "jirabottac", "Basic bWFyeWFtbWVoYWJAZ21haWwuY29tOmROYWdqelRyQWlrMDV0blMyY2E1QjE5QQ==");
+//AddComment("MM-29","hai", "jirabottac", "Basic bWFyeWFtbWVoYWJAZ21haWwuY29tOmROYWdqelRyQWlrMDV0blMyY2E1QjE5QQ==");
+//EditComment("MM-29","10026","hey", "jirabottac", "Basic bWFyeWFtbWVoYWJAZ21haWwuY29tOmROYWdqelRyQWlrMDV0blMyY2E1QjE5QQ==");
 //DeleteComment("MM-29", 10025);
 //AddAttachment("MM-29","Documents\\ProjectTactful\\try.txt");
