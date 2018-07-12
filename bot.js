@@ -2,9 +2,10 @@
 var env = require('node-env-file');
 var mongoose=require('mongoose');       
 var http=require('http');
+var fs = require('fs');
 var request=require('request');
 env(__dirname + '/.env');
-var x = require('./index');
+var Jira = require('./Jira');
 
 
 
@@ -42,11 +43,6 @@ var bot_options = {
 bot_options.json_file_store = __dirname + '/.data/db/'; // store user data in a simple JSON format
 
 
-// Use a mongo database if specified, otherwise store in a JSON file local to the app.
-// Mongo is automatically configured when deploying to Heroku
-
-
-// Create the Botkit controller, which controls all instances of the bot.
 var controller = Botkit.slackbot(bot_options);
 var slackBot=controller.spawn({
 token: process.env.botToken
@@ -56,7 +52,6 @@ slackBot.startRTM();
 
 controller.startTicking();
 
-// Set up an Express-powered webserver to expose oauth and webhook endpoints
 var webserver = require(__dirname + '/components/express_webserver.js')(controller);
 webserver.post('/challenge',function(req,res){
   
@@ -72,7 +67,28 @@ determineType(req.body);
 
   
 
+controller.on('file_share', function(bot, message) {
 
+  var destination_path = './uploadedfiles/'+message.file.name;
+  var url = message.file.url_private;
+
+  var options = {
+      method: 'GET',
+      url: url,
+      headers: {
+        Authorization: 'Bearer ' + process.env.botToken, 
+      }
+  };
+   var picStream=fs.createWriteStream(destination_path);
+   picStream.on('close',function(){
+     console.log("finished streaming");
+     Jira.AddAttachment("MM-32",destination_path,"jirabottac", "Basic bWFyeWFtbWVoYWJAZ21haWwuY29tOmROYWdqelRyQWlrMDV0blMyY2E1QjE5QQ==");
+   });
+  request(options, function(err, res, body) {
+      // body contains the content
+      console.log('FILE RETRIEVE STATUS',res.statusCode);          
+  }).pipe(picStream); // pipe output to filesystem
+});
   
      //function to determine message type
      function determineType(ReqBody){

@@ -178,6 +178,9 @@ exports.AddAttachment = function (IssueID, Attachment, domain, Token){
         return console.error('upload failed:', err);
       }
       console.log('Upload successful!',response);
+      fs.unlink(Attachment,function(err){
+       console.log("file deleted");
+      });
     });
   }
 //CreatIssue ("MM", "BUG", "ai7aga", "Bug", "jirabottac", "Basic bWFyeWFtbWVoYWJAZ21haWwuY29tOmROYWdqelRyQWlrMDV0blMyY2E1QjE5QQ==");
@@ -185,4 +188,4 @@ exports.AddAttachment = function (IssueID, Attachment, domain, Token){
 //AddComment("MM-29","hai", "jirabottac", "Basic bWFyeWFtbWVoYWJAZ21haWwuY29tOmROYWdqelRyQWlrMDV0blMyY2E1QjE5QQ==");
 //EditComment("MM-29","10026","hey", "jirabottac", "Basic bWFyeWFtbWVoYWJAZ21haWwuY29tOmROYWdqelRyQWlrMDV0blMyY2E1QjE5QQ==");
 //DeleteComment("MM-29", 10025);
-//AddAttachment("MM-29","Documents\\ProjectTactful\\try.txt");
+//AddAttachment("MM-29","Documents\\ProjectTactful\\try.txt","jirabottac", "Basic bWFyeWFtbWVoYWJAZ21haWwuY29tOmROYWdqelRyQWlrMDV0blMyY2E1QjE5QQ==");
