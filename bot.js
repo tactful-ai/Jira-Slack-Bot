@@ -4,6 +4,8 @@ var mongoose=require('mongoose');
 var http=require('http');
 var request=require('request');
 env(__dirname + '/.env');
+var x = require('./index');
+
 
 
 mongoose.connect('mongodb://user1:user1pw@ds131711.mlab.com:31711/jirabot',{

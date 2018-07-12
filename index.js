@@ -3,7 +3,7 @@
 var request = require("request");
 var fs = require('fs');
 //Create Issue
-function CreatIssue (projectName, summary, description, issuetype)
+exports.CreatIssue =function (projectName, summary, description, issuetype)
 {
     request({
         headers:{Authorization:'Basic bWFyeWFtbWVoYWJAZ21haWwuY29tOmROYWdqelRyQWlrMDV0blMyY2E1QjE5QQ=='},
@@ -45,7 +45,7 @@ function CreatIssue (projectName, summary, description, issuetype)
     });
 }
 //Delete Issue
-function DeleteIssue (IssueID)
+exports.DeleteIssue = function (IssueID)
 {
     request({
         headers:{Authorization:'Basic bWFyeWFtbWVoYWJAZ21haWwuY29tOmROYWdqelRyQWlrMDV0blMyY2E1QjE5QQ=='},
@@ -73,7 +73,7 @@ function DeleteIssue (IssueID)
 
 }
 //Add Comment
-function AddComment (IssueID, comment, callback)
+exports.AddComment =function (IssueID, comment, callback)
 {
     request({
         headers:{Authorization:'Basic bWFyeWFtbWVoYWJAZ21haWwuY29tOmROYWdqelRyQWlrMDV0blMyY2E1QjE5QQ=='},
@@ -103,7 +103,7 @@ function AddComment (IssueID, comment, callback)
     });
 }
 //Delete Comment
-function DeleteComment (IssueID, CommentID)
+exports.DeleteComment = function (IssueID, CommentID)
 {
     request({
         headers:{Authorization:'Basic bWFyeWFtbWVoYWJAZ21haWwuY29tOmROYWdqelRyQWlrMDV0blMyY2E1QjE5QQ=='},
@@ -129,7 +129,7 @@ function DeleteComment (IssueID, CommentID)
     });
 }
 //Edit Comment
-function EditComment (IssueID, CommentID, UpdatedComment)
+exports.EditComment = function (IssueID, CommentID, UpdatedComment)
 {
     request({
         headers:{Authorization:'Basic bWFyeWFtbWVoYWJAZ21haWwuY29tOmROYWdqelRyQWlrMDV0blMyY2E1QjE5QQ=='},
@@ -160,7 +160,7 @@ function EditComment (IssueID, CommentID, UpdatedComment)
 
 }
 //Add Attachment
-function AddAttachment(IssueID, Attachment){
+exports.AddAttachment = function (IssueID, Attachment){
     var formData = {
       file: fs.createReadStream(Attachment),
     };
@@ -180,7 +180,7 @@ function AddAttachment(IssueID, Attachment){
       console.log('Upload successful!',response);
     });
   }
-CreatIssue ("MM", "BUG", "ai7aga", "Bug");
+//CreatIssue ("MM", "BUG", "ai7aga", "Bug");
 //DeleteIssue("MM-28");
 //AddComment("MM-29","eslam");
 //EditComment("MM-29","10025","islam");
