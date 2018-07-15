@@ -178,7 +178,8 @@ controller.on('slash_command', (bot, message) => {
   var info = message.text.split(',');
   var dialog = bot.createDialog('Jira Initialization Form', 'jira-init', 'Submit')
   .addText('Username', 'username', info[0] || '')
-  .addText('Authentication Token', 'token', info[1] || '');
+  .addText('Authentication Token', 'token', info[1] || '')
+  .addText('Domain', 'domain', '');
   bot.replyWithDialog(message, dialog.asObject(), (err, res) => {
     // console.log(res);
   });
@@ -186,8 +187,9 @@ controller.on('slash_command', (bot, message) => {
 
 controller.on('dialog_submission', (bot, message) => {
   var submission = message.submission;
-  var combinedString = `${submission.username}:${submission.token}`;
+  var combinedString = `Basic ${submission.username}:${submission.token}`;
   var encodedString = Buffer.from(combinedString).toString('base64');
+  var domainName = submission.domain;
   bot.dialogOk();
   bot.reply(message, 'Got it!');
 });
