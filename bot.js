@@ -26,7 +26,7 @@ db.once('open',function()
 	
 });
 if (!process.env.clientId || !process.env.clientSecret || !process.env.PORT ||!process.env.botToken) {
-  usage_tip();
+  //usage_tip();
   // process.exit(1);
 }
 
@@ -134,23 +134,6 @@ controller.on('direct_message,direct_mention,mention', function(bot, message) {
   bot.reply(message,"okaaay");
 });
 
-controller.on('slash_command', (bot, message) => {
-
-	var dialog = bot.createDialog('Jira Initialization Form', 'jira-init', 'Submit')
-	.addText('Username', 'text', 'Jira Account Username')
-	.addText('Authentication Token', 'text1', 'Jira Authentication Token');
-	bot.replyWithDialog(message, dialog.asObject(), (err, res) => {
-		console.log(res);
-	});
-	// bot.replyPrivate(message, 'Okay');
-	// bot.startConversation(message, (err, convo) => {
-	//   convo.addQuestion('Hi !', (response, convo) => {
-	//     convo.say('Hi again :D');
-	//     convo.next();
-	//   }, {}, 'default');
-	// });
-});
-
 controller.middleware.receive.use((bot, message, next) => {
   
   if (message.type === 'dialog_submission') {
@@ -159,13 +142,22 @@ controller.middleware.receive.use((bot, message, next) => {
   next();
 });
 
+controller.on('slash_command', (bot, message) => {
+  bot.replyPrivate(message, 'Ok Working on!');
+  var info = message.text.split(',');
+  var dialog = bot.createDialog('Jira Initialization Form', 'jira-init', 'Submit')
+  .addText('Username', 'username', info[0] || '')
+  .addText('Authentication Token', 'token', info[1] || '');
+  bot.replyWithDialog(message, dialog.asObject(), (err, res) => {
+    // console.log(res);
+  });
+});
+
 controller.on('dialog_submission', (bot, message) => {
-  console.log("aaa");
   var submission = message.submission;
-  console.log(submission);
+  var combinedString = `${submission.username}:${submission.token}`;
+  var encodedString = Buffer.from(combinedString).toString('base64');
   bot.dialogOk();
   bot.reply(message, 'Got it!');
-  
-
 });
 
