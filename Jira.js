@@ -3,7 +3,7 @@
 var request = require("request");
 var fs = require('fs');
 //Create Issue
-exports.CreateIssue =function (projectName, summary, description, issuetype, domain, Token,callBackDB,messageID,callBackAttach,path)
+exports.CreatIssue =function (projectName, summary, description, issuetype, domain, Token)
 {
     request({
         headers:{Authorization: Token},
@@ -35,13 +35,7 @@ exports.CreateIssue =function (projectName, summary, description, issuetype, dom
         {
             console.log("Issue Posted.");
             console.log(body);
-            if(typeof callBackAttach==='function'){
-                callBackAttach(body.key,path,domain,Token);
-                callBackDB(body.id,messageID);
-
-            }
-            else { callBackDB(body.id,messageID); }
-            return body;
+            return;
         }
     if (response.statusCode === 400)
         {
@@ -183,13 +177,13 @@ exports.AddAttachment = function (IssueID, Attachment, domain, Token){
       if (err) {
         return console.error('upload failed:', err);
       }
-      console.log('Upload successful!');
+      console.log('Upload successful!',response);
       fs.unlink(Attachment,function(err){
        console.log("file deleted");
       });
     });
   }
-//CreateIssue ("MM", "BUG", "ai7aga", "Bug", "jirabottac", "Basic bWFyeWFtbWVoYWJAZ21haWwuY29tOmROYWdqelRyQWlrMDV0blMyY2E1QjE5QQ==");
+//CreatIssue ("MM", "BUG", "ai7aga", "Bug", "jirabottac", "Basic bWFyeWFtbWVoYWJAZ21haWwuY29tOmROYWdqelRyQWlrMDV0blMyY2E1QjE5QQ==");
 //DeleteIssue("MM-28", "jirabottac", "Basic bWFyeWFtbWVoYWJAZ21haWwuY29tOmROYWdqelRyQWlrMDV0blMyY2E1QjE5QQ==");
 //AddComment("MM-29","hai", "jirabottac", "Basic bWFyeWFtbWVoYWJAZ21haWwuY29tOmROYWdqelRyQWlrMDV0blMyY2E1QjE5QQ==");
 //EditComment("MM-29","10026","hey", "jirabottac", "Basic bWFyeWFtbWVoYWJAZ21haWwuY29tOmROYWdqelRyQWlrMDV0blMyY2E1QjE5QQ==");
