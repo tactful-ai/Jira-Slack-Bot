@@ -59,7 +59,7 @@ exports.DeleteIssue = function (IssueID, domain, Token)
       method: 'DELETE',
       json: true
     }, function(error, response, body) {
-        //console.log(error);
+        console.log(body.errorMessages[0],"heree");
       if(error)
         {
             console.log(error, null);
@@ -79,7 +79,7 @@ exports.DeleteIssue = function (IssueID, domain, Token)
 
 }
 //Add Comment
-exports.AddComment =function (IssueID, comment, domain, Token)
+exports.AddComment =function (IssueID, comment, domain, Token,callBackDB,messageID)
 {
     request({
         headers:{Authorization: Token },
@@ -90,7 +90,8 @@ exports.AddComment =function (IssueID, comment, domain, Token)
       method: 'POST',
       json: true
     }, function(error, response, body) {
-      console.log(body);
+      
+      callBackDB(messageID,body.id);
       if(error)
         {
             console.log(error, null);
