@@ -26,8 +26,8 @@ db.once('open',function()
 	
 });
 if (!process.env.clientId || !process.env.clientSecret || !process.env.PORT ||!process.env.botToken) {
-  usage_tip();
-  // process.exit(1);
+  console.log("please provide envs");
+  
 }
 
 var Botkit = require('botkit');
@@ -58,20 +58,35 @@ webserver.post('/challenge',function(req,res){
   
   res.send(req.body.challenge);
 determineType(req.body);
-
   //req.body.event.text
   
 });
 
+function addDataBase(jiraIDD,messageIDD){
+  var newMesage=new model({
+    jiraID:jiraIDD,
+    messageID:messageIDD
+    });
+    newMesage.save(function(err,newq){
+      if(err){console.log(err,'err')};
+      console.log(newq,"newq");
+    });
 
+}
 
-  
+controller.on('message_received', function(bot, message) {
+  console.log("something happend");
+});
 
 controller.on('file_share', function(bot, message) {
-
+  console.log(message);
   var destination_path = './uploadedfiles/'+message.file.name;
   var url = message.file.url_private;
-
+  var title=message.file.title;
+  var comment=message.file.initial_comment===undefined?'No Comment':message.file.initial_comment.comment;
+  var messageId=message.ts;
+  console.log(title,comment,messageId);
+ 
   var options = {
       method: 'GET',
       url: url,
@@ -82,17 +97,24 @@ controller.on('file_share', function(bot, message) {
    var picStream=fs.createWriteStream(destination_path);
    picStream.on('close',function(){
      console.log("finished streaming");
-     Jira.AddAttachment("MM-32",destination_path,"jirabottac", "Basic bWFyeWFtbWVoYWJAZ21haWwuY29tOmROYWdqelRyQWlrMDV0blMyY2E1QjE5QQ==");
+     var respBody=Jira.CreateIssue("MM",title,comment,"Bug", "jirabottac", "Basic bWFyeWFtbWVoYWJAZ21haWwuY29tOmROYWdqelRyQWlrMDV0blMyY2E1QjE5QQ==",addDataBase,message.ts,Jira.AddAttachment,destination_path);
    });
   request(options, function(err, res, body) {
       // body contains the content
+      bot.replyInThread(message,'You posted an issue with an image');
       console.log('FILE RETRIEVE STATUS',res.statusCode);          
   }).pipe(picStream); // pipe output to filesystem
 });
   
      //function to determine message type
      function determineType(ReqBody){
-      if(ReqBody.event.subtype==='message_deleted'){
+       if(ReqBody.event.bot_id!==undefined){
+         //ignore
+       }
+       else if(typeof ReqBody.event.thread_ts!=='undefined' ){     //reply on thread not a new issue
+         console.log("you added a new comment");
+       }
+      else if(ReqBody.event.subtype==='message_deleted'){
         console.log("message deleted");
         model.deleteOne({messageID:ReqBody.event.previous_message.client_msg_id},function(err)
       {
@@ -100,19 +122,28 @@ controller.on('file_share', function(bot, message) {
       });
       }
       else if(ReqBody.event.subtype==='message_changed'){
-        console.log("message changed");
+        console.log("message changed",ReqBody.event.subtype,ReqBody.event.bot_id);
+        
+        ReqBody.event.thread_ts=ReqBody.event.message.thread_ts;
+          slackBot.replyInThread(ReqBody.event,"hi dude you edited this messsage");
+          
+        
       }
-      else{
+      else if(ReqBody.event.subtype==='file_share'){
+        //do nothing slack controller will handle this
+      }
+      else{ //recieve a message without file
         console.log("New message recieved");
-        //linkMessageToJira(ReqBody.event.channel,ReqBody.event.client_msg_id,"jiraid123");
-        var newMesage=new model({
-        jiraID:"jiraid123",
-        messageID:ReqBody.event.client_msg_id
-        });
-        newMesage.save(function(err,newq){
-          if(err){console.log(err)};
-          console.log(newq);
-        });
+
+        
+          var respBody=Jira.CreateIssue("MM",ReqBody.event.text,ReqBody.event.text,"Bug", "jirabottac", "Basic bWFyeWFtbWVoYWJAZ21haWwuY29tOmROYWdqelRyQWlrMDV0blMyY2E1QjE5QQ==",addDataBase,ReqBody.event.ts);
+
+          
+          slackBot.replyInThread(ReqBody.event,"hi dude you added a new message");
+          
+
+        
+
       }
 
      }
