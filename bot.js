@@ -14,6 +14,12 @@ mongoose.connect('mongodb://user1:user1pw@ds131711.mlab.com:31711/jirabot',{
   reconnectTries:Number.MAX_VALUE,
 });
 var db=mongoose.connection;
+
+var userSchema=mongoose.Schema({
+userID:String,
+jiraEncodedToken:String,
+domainName:String
+});
 var issueSchema=mongoose.Schema({
 jiraID:String,
 messageID:String
@@ -23,6 +29,7 @@ var commentSchema=mongoose.Schema({
    jiraCommentID:String,
    commentID:String
 });
+var user=mongoose.model('user',userSchema);
 var comment=mongoose.model('comment',commentSchema);
 var issue=mongoose.model('issue',issueSchema);
 db.once('open',function() 
@@ -61,9 +68,11 @@ controller.startTicking();
 var webserver = require(__dirname + '/components/express_webserver.js')(controller);
 webserver.post('/challenge',function(req,res){
   
-  
-  res.send(req.body.challenge);
-determineType(req.body);
+  if(req.body.challenge!==undefined){
+    res.send(req.body.challenge);
+
+  }
+  else { determineType(req.body); }
   //req.body.event.text
   
 });
