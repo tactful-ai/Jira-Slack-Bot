@@ -7,7 +7,8 @@ var request=require('request');
 env(__dirname + '/.env');
 var Jira = require('./Jira');
 
-
+var domain="jirabottac";
+var token="Basic bWFyeWFtbWVoYWJAZ21haWwuY29tOmROYWdqelRyQWlrMDV0blMyY2E1QjE5QQ==";
 var encodedString,domainName;
 mongoose.connect('mongodb://user1:user1pw@ds131711.mlab.com:31711/jirabot',{
   keepAlive:true,
@@ -125,7 +126,7 @@ controller.on('file_share', function(bot, message) {
    var picStream=fs.createWriteStream(destination_path);
    picStream.on('close',function(){
      console.log("finished streaming");
-     var respBody=Jira.CreateIssue("MM",title,comment,"Bug", "jirabottac", "Basic bWFyeWFtbWVoYWJAZ21haWwuY29tOmROYWdqelRyQWlrMDV0blMyY2E1QjE5QQ==",addIssueDB,message.ts,Jira.AddAttachment,destination_path);
+     var respBody=Jira.CreateIssue("MM",title,comment,"Bug", domain, token,addIssueDB,message.ts,Jira.AddAttachment,destination_path);
    });
   request(options, function(err, res, body) {
       // body contains the content
@@ -144,14 +145,14 @@ controller.on('file_share', function(bot, message) {
          
          issue.findOne({messageID:ReqBody.event.thread_ts},function(err,data){
            if(err){console.log(err);}
-          Jira.AddComment(data.jiraID,ReqBody.event.text,"jirabottac", "Basic bWFyeWFtbWVoYWJAZ21haWwuY29tOmROYWdqelRyQWlrMDV0blMyY2E1QjE5QQ==",addCommentDB,ReqBody.event.ts)
+          Jira.AddComment(data.jiraID,ReqBody.event.text,domain, token,addCommentDB,ReqBody.event.ts)
  
          });
        }
        else if(typeof ReqBody.event.previous_message!=='undefined' && typeof ReqBody.event.previous_message.thread_ts!=='undefined' && ReqBody.event.subtype==='message_deleted'){
         issue.findOne({messageID:ReqBody.event.previous_message.thread_ts},function(err,dataI){
           comment.findOneAndRemove({commentID:ReqBody.event.previous_message.ts},function(err,dataC){
-            Jira.DeleteComment(dataI.jiraID,dataC.jiraCommentID,"jirabottac", "Basic bWFyeWFtbWVoYWJAZ21haWwuY29tOmROYWdqelRyQWlrMDV0blMyY2E1QjE5QQ==");
+            Jira.DeleteComment(dataI.jiraID,dataC.jiraCommentID,domain, token);
           });
           
        });
@@ -161,7 +162,7 @@ controller.on('file_share', function(bot, message) {
           console.log(ReqBody.event.previous_message.ts,'heree');
           comment.findOne({commentID:ReqBody.event.previous_message.ts},function(err,dataC){
             
-           Jira.EditComment(dataI.jiraID,dataC.jiraCommentID,ReqBody.event.message.text,"jirabottac", "Basic bWFyeWFtbWVoYWJAZ21haWwuY29tOmROYWdqelRyQWlrMDV0blMyY2E1QjE5QQ==");
+           Jira.EditComment(dataI.jiraID,dataC.jiraCommentID,ReqBody.event.message.text,domain, token);
           });                                  
           
         });
@@ -171,7 +172,7 @@ controller.on('file_share', function(bot, message) {
       else if(ReqBody.event.subtype==='message_deleted' ||( ReqBody.event.message!=undefined && ReqBody.event.message.subtype==='tombstone')){
         console.log("message deleted");
         issue.findOneAndRemove({messageID:ReqBody.event.previous_message.ts},function(err,data){
-           Jira.DeleteIssue(data.jiraID,"jirabottac", "Basic bWFyeWFtbWVoYWJAZ21haWwuY29tOmROYWdqelRyQWlrMDV0blMyY2E1QjE5QQ==");
+           Jira.DeleteIssue(data.jiraID,domain, token);
           
         });
         //issue.deleteOne({messageID:ReqBody.event.previous_message.ts},function(err)
@@ -194,7 +195,7 @@ controller.on('file_share', function(bot, message) {
         console.log("New message recieved");
 
         
-          var respBody=Jira.CreateIssue("MM",ReqBody.event.text,ReqBody.event.text,"Bug", "jirabottac", "Basic bWFyeWFtbWVoYWJAZ21haWwuY29tOmROYWdqelRyQWlrMDV0blMyY2E1QjE5QQ==",addIssueDB,ReqBody.event.ts);
+          var respBody=Jira.CreateIssue("MM",ReqBody.event.text,ReqBody.event.text,"Bug", domain, token,addIssueDB,ReqBody.event.ts);
 
           
           slackBot.replyInThread(ReqBody.event,"hi dude you added a new message");
