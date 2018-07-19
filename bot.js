@@ -247,10 +247,51 @@ controller.on('slash_command', (bot, message) => {
 controller.on('dialog_submission', (bot, message) => {
   var submission = message.submission;
   var combinedString = `${submission.username}:${submission.token}`;
-   encodedString = Buffer.from(combinedString).toString('base64');
-   encodedString='Basic '+encodedString;
-   domainName = submission.domain;
+  encodedString = Buffer.from(combinedString).toString('base64');
+  encodedString='Basic '+encodedString;
+  domainName = submission.domain;
   bot.dialogOk();
   bot.reply(message, 'Got it!');
+  var n_user = user({
+    userID: message.user,
+    jiraEncodedToken: encodedString,
+    domainName: domainName
+  })
+  n_user.save((err, usr) =>{ 
+    if (err) {
+      console.log('cannot save user !', err)
+    } else {
+      console.log('User Saved !', usr)
+    }
+  })
 });
 
+controller.middleware.receive.use((bot, message, next) => {
+  // console.log(message)
+  if (message.type == 'ambient') {
+    var userID = message.event.user
+    user.findOne({'userID': userID}, (err, usr) => {
+      if(err){
+        console.log('err', err);
+      } else if(usr === null) {
+        controller.storage.teams.get(message.team_id, (err, data) => {
+          if (err) {
+            console.log('Cannot get team data !', err)
+          } else {
+            let token = data.bot.token
+            let errM = 'Opps !, Looks like you did\'t register your jira account, please use the slash commant \\init to register'
+            let reqURL = `https://slack.com/api/chat.postEphemeral?token=${token}&channel=${message.channel}&text=${errM}&user=${message.user}`
+            request.post(reqURL, (err, res, body)=> {
+              if (err){
+                console.log('ERR', err)
+              } else {
+                console.log('BODY', body)
+              }
+            })
+          }
+        })
+      }
+    })
+  }
+  next()
+});
