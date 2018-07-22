@@ -61,7 +61,7 @@ var controller = Botkit.slackbot(bot_options);
 var slackBot=controller.spawn({
 token: process.env.botToken
 });
-//slackBot.startRTM();
+slackBot.startRTM();
 
 
 controller.startTicking();
@@ -229,13 +229,13 @@ controller.on('direct_message,direct_mention,mention', function(bot, message) {
   bot.reply(message,"okaaay");
 });
 
-// controller.middleware.receive.use((bot, message, next) => {
+controller.middleware.receive.use((bot, message, next) => {
   
-//   if (message.type === 'dialog_submission') {
-//     console.log('Catched Dialog Reply ! ', message);
-//   }
-//   next();
-// });
+  if (message.type === 'dialog_submission') {
+    console.log('Catched Dialog Reply ! ', message);
+  }
+  next();
+});
 
 controller.on('slash_command', (bot, message) => {
   bot.replyPrivate(message, 'Ok Working on!');
