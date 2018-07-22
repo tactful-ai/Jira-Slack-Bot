@@ -10,7 +10,7 @@ var Jira = require('./Jira');
 var domain="jirabottac";
 var token="Basic bWFyeWFtbWVoYWJAZ21haWwuY29tOmROYWdqelRyQWlrMDV0blMyY2E1QjE5QQ==";
 var encodedString,domainName;
-mongoose.connect('mongodb://user1:user1pw@ds131711.mlab.com:31711/jirabot',{
+mongoose.connect(process.env.dbString,{
   keepAlive:true,
   reconnectTries:Number.MAX_VALUE,
 });
@@ -39,7 +39,7 @@ db.once('open',function()
   
 	
 });
-if (!process.env.clientId || !process.env.clientSecret || !process.env.PORT ||!process.env.botToken) {
+if (!process.env.clientId || !process.env.clientSecret || !process.env.PORT ||!process.env.botToken || !process.env.dbString) {
   console.log("please provide envs");
   
 }
@@ -277,8 +277,8 @@ controller.on('dialog_submission', (bot, message) => {
 
 controller.middleware.receive.use((bot, message, next) => {
    console.log(message);
-  if (message.type == 'ambient') {
-    var userID = message.event.user
+  if(message.command!==undefined || message.type==='dialog_submission'){ next();}
+    var userID = message.event.user!==undefined?message.event.user:message.raw_message.event.previous_message.user;
     user.findOne({'userID': userID}, (err, usr) => {
       if(err){
         console.log('err', err);
@@ -288,7 +288,7 @@ controller.middleware.receive.use((bot, message, next) => {
             console.log('Cannot get team data !', err)
           } else {
             let token = data.bot.token
-            let errM = 'Opps !, Looks like you did\'t register your jira account, please use the slash commant \\init to register'
+            let errM = 'Opps !, Looks like you did\'t register your jira account, please use the slash commant \\initt to register'
             let reqURL = `https://slack.com/api/chat.postEphemeral?token=${token}&channel=${message.channel}&text=${errM}&user=${message.user}`
             request.post(reqURL, (err, res, body)=> {
               if (err){
@@ -306,7 +306,7 @@ controller.middleware.receive.use((bot, message, next) => {
       }
     })
 
-  }
   
-  next()
+  
+  next();
 });
