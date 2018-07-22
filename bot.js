@@ -6,7 +6,7 @@ var fs = require('fs');
 var request=require('request');
 env(__dirname + '/.env');
 var Jira = require('./Jira');
-
+var last_ts;
 var domain="jirabottac";
 var token="Basic bWFyeWFtbWVoYWJAZ21haWwuY29tOmROYWdqelRyQWlrMDV0blMyY2E1QjE5QQ==";
 var encodedString,domainName;
@@ -61,7 +61,7 @@ var controller = Botkit.slackbot(bot_options);
 var slackBot=controller.spawn({
 token: process.env.botToken
 });
-slackBot.startRTM();
+//slackBot.startRTM();
 
 
 controller.startTicking();
@@ -77,7 +77,13 @@ webserver.post('/challenge',function(req,res){
   //req.body.event.text
   
 });
-
+function checkIssueExist(messageIDD){
+  issue.findOne({messageID:messageIDD},function(err,data){
+    console.log(data,"data");
+    if(data!=null){ console.log("data exist"); return 1; }
+      return 0;
+  });
+}
 function addIssueDB(jiraIDD,messageIDD){
   var newMesage=new issue({
     jiraID:jiraIDD,
@@ -103,12 +109,11 @@ function addCommentDB(commentIDD,jiraCommentIDD){
 
 }
 
-controller.on('message_received', function(bot, message) {
-  console.log("something happend");
-});
+
 
 controller.on('file_share', function(bot, message) {
   console.log(encodedString,domainName);
+  if(message.ts==last_ts){return;}
   var destination_path = './uploadedfiles/'+message.file.name;
   var url = message.file.url_private;
   var title=message.file.title;
@@ -191,10 +196,10 @@ controller.on('file_share', function(bot, message) {
       else if(ReqBody.event.subtype==='file_share'){
         //do nothing slack controller will handle this
       }
-      else if(ReqBody.event.thread_ts===undefined && ReqBody.event.text!==undefined){ //recieve a message without file
+      else if(ReqBody.event.thread_ts===undefined && ReqBody.event.text!==undefined && last_ts!==ReqBody.event.ts && !checkIssueExist(ReqBody.event.ts)){ //recieve a message without file
         console.log("New message recieved");
-
-        
+         
+         last_ts=ReqBody.event.ts;
           var respBody=Jira.CreateIssue("MM",ReqBody.event.text,ReqBody.event.text,"Bug", domain, token,addIssueDB,ReqBody.event.ts);
 
           
@@ -224,13 +229,13 @@ controller.on('direct_message,direct_mention,mention', function(bot, message) {
   bot.reply(message,"okaaay");
 });
 
-controller.middleware.receive.use((bot, message, next) => {
+// controller.middleware.receive.use((bot, message, next) => {
   
-  if (message.type === 'dialog_submission') {
-    console.log('Catched Dialog Reply ! ', message);
-  }
-  next();
-});
+//   if (message.type === 'dialog_submission') {
+//     console.log('Catched Dialog Reply ! ', message);
+//   }
+//   next();
+// });
 
 controller.on('slash_command', (bot, message) => {
   bot.replyPrivate(message, 'Ok Working on!');
