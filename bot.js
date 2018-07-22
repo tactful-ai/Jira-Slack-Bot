@@ -49,34 +49,44 @@ var debug = require('debug')('botkit:main');
 var bot_options = {
 	clientId: process.env.clientId,
   clientSecret: process.env.clientSecret,
-	// debug: true,
+  // debug: true,
+  token: process.env.botToken,
 	scopes: ['bot'],
 	studio_token: process.env.studio_token,
 	studio_command_uri: process.env.studio_command_uri
 };
 bot_options.json_file_store = __dirname + '/.data/db/'; // store user data in a simple JSON format
 
-
 var controller = Botkit.slackbot(bot_options);
-var slackBot=controller.spawn({
-token: process.env.botToken
-});
-slackBot.startRTM();
 
-
-controller.startTicking();
-
-var webserver = require(__dirname + '/components/express_webserver.js')(controller);
-webserver.post('/challenge',function(req,res){
-  
-  if(req.body.challenge!==undefined){
-    res.send(req.body.challenge);
-
+controller.setupWebserver(4300, (err, webserver) => {
+  if (err) { 
+      console.log('Server Creation Error ! : ', err)
+  } else { 
+      controller.createWebhookEndpoints(webserver);
+      controller.createOauthEndpoints(webserver);
   }
-  else { determineType(req.body); }
-  //req.body.event.text
-  
 });
+
+// var slackBot=controller.spawn({
+// token: process.env.botToken
+// });
+// slackBot.startRTM();
+
+
+// controller.startTicking();
+
+// var webserver = require(__dirname + '/components/express_webserver.js')(controller);
+// webserver.post('/challenge',function(req,res){
+  
+//   if(req.body.challenge!==undefined){
+//     res.send(req.body.challenge);
+
+//   }
+//   else { determineType(req.body); }
+//   //req.body.event.text
+  
+// });
 
 function addIssueDB(jiraIDD,messageIDD){
   var newMesage=new issue({
