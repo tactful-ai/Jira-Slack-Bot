@@ -79,7 +79,7 @@ exports.DeleteIssue = function (IssueID, domain, Token)
 
 }
 //Add Comment
-exports.AddComment =function (IssueID, comment, domain, Token,callBackDB,messageID)
+exports.AddComment =function (IssueID, comment, domain, Token,callBackDB,messageID,threadID)
 {
     request({
         headers:{Authorization: Token },
@@ -91,7 +91,7 @@ exports.AddComment =function (IssueID, comment, domain, Token,callBackDB,message
       json: true
     }, function(error, response, body) {
       
-      callBackDB(messageID,body.id);
+      callBackDB(messageID,body.id,threadID);
       if(error)
         {
             console.log(error, null);

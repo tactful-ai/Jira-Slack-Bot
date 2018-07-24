@@ -1,12 +1,21 @@
 
 var env = require('node-env-file');
-var mongoose=require('mongoose');
+var mongoose=require('mongoose');       
 var http=require('http');
 var fs = require('fs');
 var request=require('request');
 env(__dirname + '/.env');
 var Jira = require('./Jira');
-var last_ts;
+var cronJob=require('cron').CronJob;
+var outDateIssues=new cronJob('5 8 * * 0',function(){    //run job 8:05 every sunday
+  issue.deleteMany({
+    ts:{$gt:(Date.now()-43200)},
+  },function(err){
+    if(err){console.log("err",err)};
+  });
+  console.log('cronjob started');
+ 
+},null,true,'Africa/Cairo');
 var domain="jirabottac";
 var token="Basic bWFyeWFtbWVoYWJAZ21haWwuY29tOmROYWdqelRyQWlrMDV0blMyY2E1QjE5QQ==";
 var encodedString,domainName;
@@ -23,7 +32,8 @@ domainName:String
 });
 var issueSchema=mongoose.Schema({
 jiraID:String,
-messageID:String
+messageID:String,
+ts:Number
 });
 var commentSchema=mongoose.Schema({
    jiraID:String,
@@ -33,15 +43,15 @@ var commentSchema=mongoose.Schema({
 var user=mongoose.model('user',userSchema);
 var comment=mongoose.model('comment',commentSchema);
 var issue=mongoose.model('issue',issueSchema);
-db.once('open',function()
+db.once('open',function() 
 {
   console.log("database ready");
-
-
+  
+	
 });
 if (!process.env.clientId || !process.env.clientSecret || !process.env.PORT ||!process.env.botToken || !process.env.dbString) {
   console.log("please provide envs");
-
+  
 }
 
 var Botkit = require('botkit');
@@ -60,9 +70,9 @@ bot_options.json_file_store = __dirname + '/.data/db/'; // store user data in a 
 var controller = Botkit.slackbot(bot_options);
 
 controller.setupWebserver(3000, (err, webserver) => {
-  if (err) {
+  if (err) { 
       console.log('Server Creation Error ! : ', err)
-  } else {
+  } else { 
       controller.createWebhookEndpoints(webserver);
       controller.createOauthEndpoints(webserver);
   }
@@ -78,19 +88,21 @@ controller.setupWebserver(3000, (err, webserver) => {
 
 // var webserver = require(__dirname + '/components/express_webserver.js')(controller);
 // webserver.post('/challenge',function(req,res){
+  
+//   if(req.body.challenge!==undefined){
+//     res.send(req.body.challenge);
 
-});
-function checkIssueExist(messageIDD){
-  issue.findOne({messageID:messageIDD},function(err,data){
-    console.log(data,"data");
-    if(data!=null){ console.log("data exist"); return 1; }
-      return 0;
-  });
-}
+//   }
+//   else { determineType(req.body); }
+//   //req.body.event.text
+  
+// });
+
 function addIssueDB(jiraIDD,messageIDD){
   var newMesage=new issue({
     jiraID:jiraIDD,
-    messageID:messageIDD
+    messageID:messageIDD,
+    ts:(Date.now()/(1000*60))
     });
     newMesage.save(function(err,newq){
       if(err){console.log(err,'err')};
@@ -98,7 +110,7 @@ function addIssueDB(jiraIDD,messageIDD){
     });
 
 }
-function addCommentDB(commentIDD,jiraCommentIDD){
+function addCommentDB(commentIDD,jiraCommentIDD,threadID){
   var newComment=new comment({
     jiraCommentID:jiraCommentIDD,
     commentID:commentIDD
@@ -107,28 +119,33 @@ function addCommentDB(commentIDD,jiraCommentIDD){
    if(err){console.log(err,'err');}
    console.log(newc);
 
+   issue.findOneAndUpdate({messageID:threadID},{ts:(Date.now()/(1000*60))},function(err,data){ //update thread ts
+      if(err){console.log(err);}
+   });
+
    });
 
 
 }
 
-
+controller.on('message_received', function(bot, message) {
+  console.log("something happend");
+});
 
 controller.on('file_share', function(bot, message) {
   console.log(encodedString,domainName);
-  if(message.ts==last_ts){return;}
   var destination_path = './uploadedfiles/'+message.file.name;
   var url = message.file.url_private;
   var title=message.file.title;
   var comment=message.file.initial_comment===undefined?'No Comment':message.file.initial_comment.comment;
   var messageId=message.ts;
   console.log(title,comment,messageId);
-
+ 
   var options = {
       method: 'GET',
       url: url,
       headers: {
-        Authorization: 'Bearer ' + process.env.botToken,
+        Authorization: 'Bearer ' + process.env.botToken, 
       }
   };
    var picStream=fs.createWriteStream(destination_path);
@@ -139,10 +156,10 @@ controller.on('file_share', function(bot, message) {
   request(options, function(err, res, body) {
       // body contains the content
       bot.replyInThread(message,'You posted an issue with an image');
-      console.log('FILE RETRIEVE STATUS',res.statusCode);
+      console.log('FILE RETRIEVE STATUS',res.statusCode);          
   }).pipe(picStream); // pipe output to filesystem
 });
-
+  
      //function to determine message type
      function determineType(ReqBody,slackBot){
        if(ReqBody.raw_message.event.bot_id!==undefined){
@@ -150,11 +167,11 @@ controller.on('file_share', function(bot, message) {
        }
        else if(typeof ReqBody.raw_message.event.thread_ts!=='undefined' ){     //reply on thread not a new issue
          console.log("you added a new comment");
-
+         
          issue.findOne({messageID:ReqBody.raw_message.event.thread_ts},function(err,data){
            if(err){console.log(err);}
-          Jira.AddComment(data.jiraID,ReqBody.raw_message.event.text,domain, token,addCommentDB,ReqBody.raw_message.event.ts)
-
+          Jira.AddComment(data.jiraID,ReqBody.raw_message.event.text,domain, token,addCommentDB,ReqBody.raw_message.event.ts,ReqBody.raw_message.event.thread_ts);
+ 
          });
        }
        else if(typeof ReqBody.raw_message.event.previous_message!=='undefined' && typeof ReqBody.raw_message.event.previous_message.thread_ts!=='undefined' && ReqBody.raw_message.event.subtype==='message_deleted'){
@@ -162,39 +179,39 @@ controller.on('file_share', function(bot, message) {
           comment.findOneAndRemove({commentID:ReqBody.raw_message.event.previous_message.ts},function(err,dataC){
             Jira.DeleteComment(dataI.jiraID,dataC.jiraCommentID,domain, token);
           });
-
+          
        });
       }
        else if(typeof ReqBody.raw_message.event.previous_message!=='undefined' && typeof ReqBody.raw_message.event.previous_message.thread_ts!=='undefined' && ReqBody.raw_message.event.message.reply_count===undefined){
         issue.findOne({messageID:ReqBody.raw_message.event.previous_message.thread_ts},function(err,dataI){
           console.log(ReqBody.raw_message.event.previous_message.ts,'heree');
           comment.findOne({commentID:ReqBody.raw_message.event.previous_message.ts},function(err,dataC){
-
+            
            Jira.EditComment(dataI.jiraID,dataC.jiraCommentID,ReqBody.raw_message.event.message.text,domain, token);
-          });
-
+          });                                  
+          
         });
-
+         
 
        }
       else if(ReqBody.raw_message.event.subtype==='message_deleted' ||( ReqBody.raw_message.event.message!=undefined && ReqBody.raw_message.event.message.subtype==='tombstone')){
         console.log("message deleted");
         issue.findOneAndRemove({messageID:ReqBody.raw_message.event.previous_message.ts},function(err,data){
            Jira.DeleteIssue(data.jiraID,domain, token);
-
+          
         });
         //issue.deleteOne({messageID:ReqBody.raw_message.event.previous_message.ts},function(err)
-
+      
         console.log("Deleted from db");
       }
-
+    
       else if(ReqBody.raw_message.event.subtype==='message_changed' && ReqBody.raw_message.event.message.text!==ReqBody.raw_message.event.previous_message.text){
         console.log("message changed",ReqBody.raw_message.event.subtype,ReqBody.raw_message.event.bot_id);
-
+        
         ReqBody.raw_message.event.thread_ts=ReqBody.raw_message.event.message.thread_ts;
           slackBot.replyInThread(ReqBody,"hi dude you edited this messsage");
-
-
+          
+        
       }
       else if(ReqBody.raw_message.event.subtype==='file_share'){
         //do nothing slack controller will handle this
@@ -202,20 +219,20 @@ controller.on('file_share', function(bot, message) {
       else if(ReqBody.raw_message.event.thread_ts===undefined && ReqBody.raw_message.event.text!==undefined){ //recieve a message without file
         console.log("New message recieved");
 
-
+        
           var respBody=Jira.CreateIssue("MM",ReqBody.raw_message.event.text,ReqBody.raw_message.event.text,"Bug", domain, token,addIssueDB,ReqBody.raw_message.event.ts);
 
-
+          
           slackBot.replyInThread(ReqBody,"hi dude you added a new message");
+          
 
-
-
+        
 
       }
 
      }
-
-
+     
+  
 
 //Start of the bot conversation
 controller.hears(['help'],'direct_message,direct_mention,mention', function(bot, message) {
@@ -233,7 +250,7 @@ controller.on('direct_message,direct_mention,mention', function(bot, message) {
 });
 
 controller.middleware.receive.use((bot, message, next) => {
-
+  
   if (message.type === 'dialog_submission') {
     console.log('Catched Dialog Reply ! ', message);
   }
@@ -265,7 +282,7 @@ controller.on('dialog_submission', (bot, message) => {
     jiraEncodedToken: encodedString,
     domainName: domainName
   })
-  n_user.save((err, usr) =>{
+  n_user.save((err, usr) =>{ 
     if (err) {
       console.log('cannot save user !', err)
     } else {
@@ -275,7 +292,7 @@ controller.on('dialog_submission', (bot, message) => {
 });
 
 controller.middleware.receive.use((bot, message, next) => {
-   console.log(message);
+   //console.log(message);
   if(message.command!==undefined || message.type==='dialog_submission'){ next();}
     var userID = message.event.user!==undefined?message.event.user:message.raw_message.event.previous_message.user;
     user.findOne({'userID': userID}, (err, usr) => {
@@ -303,9 +320,9 @@ controller.middleware.receive.use((bot, message, next) => {
         determineType(message,bot);
 
       }
-    })
+    });
 
-
-
+  
+  
   next();
 });
