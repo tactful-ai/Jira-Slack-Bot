@@ -98,8 +98,9 @@ controller.setupWebserver(3000, (err, webserver) => {
   
 // });
 
-function addIssueDB(jiraIDD,messageIDD){
+function addIssueDB(jiraIDD,messageIDD,channelIDD){
   var newMesage=new issue({
+    channelID:channelIDD,
     jiraID:jiraIDD,
     messageID:messageIDD,
     ts:Math.round((Date.now()/(1000*60)))   // date in minutes
@@ -133,7 +134,7 @@ controller.on('message_received', function(bot, message) {
 });
 
 controller.on('file_share', function(bot, message) {
-  console.log(encodedString,domainName);
+  console.log(message);
   var destination_path = './uploadedfiles/'+message.files[0].name;
   var url = message.files[0].url_private;
   var title=message.files[0].title;
@@ -151,7 +152,7 @@ controller.on('file_share', function(bot, message) {
    var picStream=fs.createWriteStream(destination_path);
    picStream.on('close',function(){
      console.log("finished streaming");
-     var respBody=Jira.CreateIssue("JIRA",title,comment,"Bug", domain, token,addIssueDB,message.ts,Jira.AddAttachment,destination_path);
+     var respBody=Jira.CreateIssue("JIRA",title,comment,"Bug", domain, token,addIssueDB,message.ts,message.event.channel,Jira.AddAttachment,destination_path);
    });
   request(options, function(err, res, body) {
       // body contains the content
@@ -222,9 +223,9 @@ controller.on('file_share', function(bot, message) {
       }
       else if(ReqBody.raw_message.event.thread_ts===undefined && ReqBody.raw_message.event.text!==undefined && /#bug/.test(ReqBody.raw_message.event.text) ){ //recieve a message without file
         console.log("New message recieved");
-
+        console.log(ReqBody);
         var text=ReqBody.raw_message.event.text.replace('#bug',' ');
-          var respBody=Jira.CreateIssue("JIRA",text,text,"Bug", domain, token,addIssueDB,ReqBody.raw_message.event.ts);
+          var respBody=Jira.CreateIssue("JIRA",text,text,"Bug", domain, token,addIssueDB,ReqBody.raw_message.event.ts,ReqBody.event.channel);
 
           
           slackBot.replyInThread(ReqBody,"hi dude you added a new message");

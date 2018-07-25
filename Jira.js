@@ -3,7 +3,7 @@
 var request = require("request");
 var fs = require('fs');
 //Create Issue
-exports.CreateIssue =function (projectName, summary, description, issuetype, domain, Token,callBackDB,messageID,callBackAttach,path)
+exports.CreateIssue =function (projectName, summary, description, issuetype, domain, Token,callBackDB,messageID,channelID,callBackAttach,path)
 {
     request({
         headers:{Authorization: Token},
@@ -37,10 +37,10 @@ exports.CreateIssue =function (projectName, summary, description, issuetype, dom
             console.log(body);
             if(typeof callBackAttach==='function'){
                 callBackAttach(body.key,path,domain,Token);
-                callBackDB(body.id,messageID);
+                callBackDB(body.id,messageID,channelID);
 
             }
-            else { callBackDB(body.id,messageID); }
+            else { callBackDB(body.id,messageID,channelID); }
             return body;
         }
     if (response.statusCode === 400)
