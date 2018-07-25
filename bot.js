@@ -170,14 +170,22 @@ controller.on('file_share', function(bot, message) {
          
          issue.findOne({messageID:ReqBody.raw_message.event.thread_ts},function(err,data){
            if(err){console.log(err);}
-          Jira.AddComment(data.jiraID,ReqBody.raw_message.event.text,domain, token,addCommentDB,ReqBody.raw_message.event.ts,ReqBody.raw_message.event.thread_ts);
+          Jira.AddComment(data.jiraID,ReqBody.raw_message.event.text,domain, token,addCommentDB,ReqBody.raw_message.event.ts,ReqBody.raw_message.event.thread_ts).catch((err) => {
+            showMessage(err, message);
+          }).then((body) => {
+            showMessage(body, message);
+          })
  
          });
        }
        else if(typeof ReqBody.raw_message.event.previous_message!=='undefined' && typeof ReqBody.raw_message.event.previous_message.thread_ts!=='undefined' && ReqBody.raw_message.event.subtype==='message_deleted'){
         issue.findOne({messageID:ReqBody.raw_message.event.previous_message.thread_ts},function(err,dataI){
           comment.findOneAndRemove({commentID:ReqBody.raw_message.event.previous_message.ts},function(err,dataC){
-            Jira.DeleteComment(dataI.jiraID,dataC.jiraCommentID,domain, token);
+            Jira.DeleteComment(dataI.jiraID,dataC.jiraCommentID,domain, token).catch((err) => {
+              showMessage(err, message);
+            }).then((body) => {
+              showMessage(body, message);
+            })
           });
           
        });
@@ -187,7 +195,11 @@ controller.on('file_share', function(bot, message) {
           console.log(ReqBody.raw_message.event.previous_message.ts,'heree');
           comment.findOne({commentID:ReqBody.raw_message.event.previous_message.ts},function(err,dataC){
             
-           Jira.EditComment(dataI.jiraID,dataC.jiraCommentID,ReqBody.raw_message.event.message.text,domain, token);
+           Jira.EditComment(dataI.jiraID,dataC.jiraCommentID,ReqBody.raw_message.event.message.text,domain, token).catch((err) => {
+            showMessage(err, message);
+          }).then((body) => {
+            showMessage(body, message);
+          })
           });                                  
           
         });
@@ -197,7 +209,11 @@ controller.on('file_share', function(bot, message) {
       else if(ReqBody.raw_message.event.subtype==='message_deleted' ||( ReqBody.raw_message.event.message!=undefined && ReqBody.raw_message.event.message.subtype==='tombstone')){
         console.log("message deleted");
         issue.findOneAndRemove({messageID:ReqBody.raw_message.event.previous_message.ts},function(err,data){
-           Jira.DeleteIssue(data.jiraID,domain, token);
+           Jira.DeleteIssue(data.jiraID,domain, token).catch((err) => {
+            showMessage(err, message);
+          }).then((body) => {
+            showMessage(body, message);
+          })
           
         });
         //issue.deleteOne({messageID:ReqBody.raw_message.event.previous_message.ts},function(err)
@@ -220,7 +236,9 @@ controller.on('file_share', function(bot, message) {
         console.log("New message recieved");
 
         
-          var respBody=Jira.CreateIssue("MM",ReqBody.raw_message.event.text,ReqBody.raw_message.event.text,"Bug", domain, token,addIssueDB,ReqBody.raw_message.event.ts);
+          var respBody=Jira.CreateIssue("MM",ReqBody.raw_message.event.text,ReqBody.raw_message.event.text,"Bug", domain, token,addIssueDB,ReqBody.raw_message.event.ts).catch((err) => {
+            showMessage(err, message);
+          })
 
           
           slackBot.replyInThread(ReqBody,"hi dude you added a new message");
@@ -318,7 +336,6 @@ controller.middleware.receive.use((bot, message, next) => {
       }
       else{
         determineType(message,bot);
-
       }
     });
 
@@ -326,3 +343,21 @@ controller.middleware.receive.use((bot, message, next) => {
   
   next();
 });
+
+var showMessage = (error, message) => {
+  controller.storage.teams.get(message.team_id, (err, data) => {
+    if (err) {
+      console.log('Cannot get team data !', err)
+    } else {
+      let token = data.bot.token
+      let reqURL = `https://slack.com/api/chat.postEphemeral?token=${token}&channel=${message.channel}&text=${error}&user=${message.user}`
+      request.post(reqURL, (err, res, body)=> {
+        if (err){
+          console.log('ERR', err)
+        } else {
+          console.log('BODY', body)
+        }
+      })
+    }
+  })
+}
