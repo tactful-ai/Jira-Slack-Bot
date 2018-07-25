@@ -342,7 +342,7 @@ var showErrorMessage = (error, message) => {
       // let reqURL = `https://slack.com/api/chat.postEphemeral?token=${token}&channel=${message.channel}&user=${message.user}&text=${error}`
       let reqURL = "https://slack.com/api/chat.postEphemeral"
       let b = {
-        "token": token,
+        //"token": token,
         "channel": message.channel,
         "user": message.user,
         "text": error,
@@ -375,7 +375,8 @@ var showErrorMessage = (error, message) => {
         body: b,
         json: true,
         headers: {
-          "Content-type": "application/json; charset=utf-8"
+          "Content-type": "application/json; charset=utf-8",
+          "Authorization": `Bearer ${token}`
         }
       },(err, res, body)=> {
         if (err){
