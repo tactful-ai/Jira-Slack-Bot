@@ -274,6 +274,7 @@ controller.on('slash_command', (bot, message) => {
 });
 
 controller.on('dialog_submission', (bot, message) => {
+  
   var submission = message.submission;
   var combinedString = `${submission.username}:${submission.token}`;
   encodedString = Buffer.from(combinedString).toString('base64');
