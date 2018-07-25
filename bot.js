@@ -9,7 +9,7 @@ var Jira = require('./Jira');
 var cronJob=require('cron').CronJob;
 var outDateIssues=new cronJob('5 8 * * 0',function(){    //run job 8:05 every sunday
   issue.deleteMany({
-    ts:{$gt:(Date.now()-43200)},
+    ts:{$lte:((Date.now()/(1000*60))-43200)},
   },function(err){
     if(err){console.log("err",err)};
   });
@@ -26,13 +26,13 @@ mongoose.connect(process.env.dbString,
   }
 );
 var db=mongoose.connection;
-
-var userSchema=mongoose.Schema({
-userID:String,
-jiraEncodedToken:String,
-domainName:String
-});
+var channelSchema = mongoose.Schema({
+  channelID:String,
+  jiraEncodedToken:String,
+  domainName:String
+})
 var issueSchema=mongoose.Schema({
+  channelID:String,
 jiraID:String,
 messageID:String,
 ts:Number
@@ -42,7 +42,7 @@ var commentSchema=mongoose.Schema({
    jiraCommentID:String,
    commentID:String
 });
-var user=mongoose.model('user',userSchema);
+var channel= mongoose.model('channel', channelSchema);
 var comment=mongoose.model('comment',commentSchema);
 var issue=mongoose.model('issue',issueSchema);
 db.once('open',function()
@@ -100,11 +100,12 @@ controller.setupWebserver(3000, (err, webserver) => {
 
 // });
 
-function addIssueDB(jiraIDD,messageIDD){
+function addIssueDB(jiraIDD,messageIDD,channelIDD){
   var newMesage=new issue({
+    channelID:channelIDD,
     jiraID:jiraIDD,
     messageID:messageIDD,
-    ts:(Date.now()/(1000*60))
+    ts:Math.round((Date.now()/(1000*60)))   // date in minutes
     });
     newMesage.save(function(err,newq){
       if(err){console.log(err,'err')};
@@ -135,14 +136,14 @@ controller.on('message_received', function(bot, message) {
 });
 
 controller.on('file_share', function(bot, message) {
-  console.log(encodedString,domainName);
-  var destination_path = './uploadedfiles/'+message.file.name;
-  var url = message.file.url_private;
-  var title=message.file.title;
-  var comment=message.file.initial_comment===undefined?'No Comment':message.file.initial_comment.comment;
+  console.log(message);
+  var destination_path = './uploadedfiles/'+message.files[0].name;
+  var url = message.files[0].url_private;
+  var title=message.files[0].title;
+  var comment=message.raw_message.event.text===undefined?'No Comment':message.raw_message.event.text;
   var messageId=message.ts;
   console.log(title,comment,messageId);
-
+ if(/#bug/.test(title) || /#bug/.test(comment) ){
   var options = {
       method: 'GET',
       url: url,
@@ -153,13 +154,14 @@ controller.on('file_share', function(bot, message) {
    var picStream=fs.createWriteStream(destination_path);
    picStream.on('close',function(){
      console.log("finished streaming");
-     var respBody=Jira.CreateIssue("JIRA",title,comment,"Bug", domain, token,addIssueDB,message.ts,Jira.AddAttachment,destination_path);
+     var respBody=Jira.CreateIssue("JIRA",title,comment,"Bug", domain, token,addIssueDB,message.ts,message.event.channel,Jira.AddAttachment,destination_path);
    });
   request(options, function(err, res, body) {
       // body contains the content
       bot.replyInThread(message,'You posted an issue with an image');
       console.log('FILE RETRIEVE STATUS',res.statusCode);
   }).pipe(picStream); // pipe output to filesystem
+}
 });
 //function to determine message type
 function determineType(ReqBody,slackBot){
@@ -170,11 +172,13 @@ function determineType(ReqBody,slackBot){
       console.log("you added a new comment");
       issue.findOne({messageID:ReqBody.raw_message.event.thread_ts},function(err,data){
         if(err){console.log(err);}
-        Jira.AddComment(data.jiraID,ReqBody.raw_message.event.text,domain, token,addCommentDB,ReqBody.raw_message.event.ts,ReqBody.raw_message.event.thread_ts).then((body) => {
-          showMessage(body, ReqBody);
-        }).catch((err) => {
-          showErrorMessage(err, ReqBody);
-        })
+        if(data!=null){
+          Jira.AddComment(data.jiraID,ReqBody.raw_message.event.text,domain, token,addCommentDB,ReqBody.raw_message.event.ts,ReqBody.raw_message.event.thread_ts).then((body) => {
+            showMessage(body, ReqBody);
+          }).catch((err) => {
+            showErrorMessage(err, ReqBody);
+          })
+        }
       });
     }
     else if(typeof ReqBody.raw_message.event.previous_message!=='undefined' && typeof ReqBody.raw_message.event.previous_message.thread_ts!=='undefined' && ReqBody.raw_message.event.subtype==='message_deleted'){
@@ -261,6 +265,7 @@ controller.on('slash_command', (bot, message) => {
 });
 
 controller.on('dialog_submission', (bot, message) => {
+  
   var submission = message.submission;
   var combinedString = `${submission.username}:${submission.token}`;
   encodedString = Buffer.from(combinedString).toString('base64');
@@ -268,16 +273,16 @@ controller.on('dialog_submission', (bot, message) => {
   domainName = submission.domain;
   bot.dialogOk();
   bot.reply(message, 'Got it!');
-  var n_user = user({
-    userID: message.user,
+  var n_channel = channel({
+    channelID: message.channel,
     jiraEncodedToken: encodedString,
     domainName: domainName
   })
-  n_user.save((err, usr) =>{
+  n_channel.save((err, usr) =>{ 
     if (err) {
-      console.log('cannot save user !', err)
+      console.log('cannot save channel !', err)
     } else {
-      console.log('User Saved !', usr)
+      console.log('Channel Saved !', usr)
     }
   })
 });
@@ -285,8 +290,8 @@ controller.on('dialog_submission', (bot, message) => {
 controller.middleware.receive.use((bot, message, next) => {
    //console.log(message);
   if(message.command!==undefined || message.type==='dialog_submission'){ next();}
-    var userID = message.event.user!==undefined?message.event.user:message.raw_message.event.previous_message.user;
-    user.findOne({'userID': userID}, (err, usr) => {
+    var channelID = message.raw_message.event.channel;
+    channel.findOne({'channelID': channelID}, (err, usr) => {
       if(err){
         console.log('err', err);
       } else if(usr === null) {
@@ -295,7 +300,7 @@ controller.middleware.receive.use((bot, message, next) => {
             console.log('Cannot get team data !', err)
           } else {
             let token = data.bot.token
-            let errM = 'Opps !, Looks like you did\'t register your jira account, please use the slash commant \\initt to register'
+            let errM = 'Opps !, Looks like you did\'t register your jira account, please use the slash command \\initt to register'
             let reqURL = `https://slack.com/api/chat.postEphemeral?token=${token}&channel=${message.channel}&text=${errM}&user=${message.user}`
             request.post(reqURL, (err, res, body)=> {
               if (err){
