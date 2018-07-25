@@ -134,13 +134,13 @@ controller.on('message_received', function(bot, message) {
 
 controller.on('file_share', function(bot, message) {
   console.log(encodedString,domainName);
-  var destination_path = './uploadedfiles/'+message.file.name;
-  var url = message.file.url_private;
-  var title=message.file.title;
-  var comment=message.file.initial_comment===undefined?'No Comment':message.file.initial_comment.comment;
+  var destination_path = './uploadedfiles/'+message.files[0].name;
+  var url = message.files[0].url_private;
+  var title=message.files[0].title;
+  var comment=message.raw_message.event.text===undefined?'No Comment':message.raw_message.event.text;
   var messageId=message.ts;
   console.log(title,comment,messageId);
- 
+ if(/#bug/.test(title) || /#bug/.test(comment) ){
   var options = {
       method: 'GET',
       url: url,
@@ -158,6 +158,7 @@ controller.on('file_share', function(bot, message) {
       bot.replyInThread(message,'You posted an issue with an image');
       console.log('FILE RETRIEVE STATUS',res.statusCode);          
   }).pipe(picStream); // pipe output to filesystem
+}
 });
   
      //function to determine message type
@@ -170,7 +171,10 @@ controller.on('file_share', function(bot, message) {
          
          issue.findOne({messageID:ReqBody.raw_message.event.thread_ts},function(err,data){
            if(err){console.log(err);}
-          Jira.AddComment(data.jiraID,ReqBody.raw_message.event.text,domain, token,addCommentDB,ReqBody.raw_message.event.ts,ReqBody.raw_message.event.thread_ts);
+           if(data!=null){
+            Jira.AddComment(data.jiraID,ReqBody.raw_message.event.text,domain, token,addCommentDB,ReqBody.raw_message.event.ts,ReqBody.raw_message.event.thread_ts);
+
+           }
  
          });
        }
@@ -197,10 +201,10 @@ controller.on('file_share', function(bot, message) {
       else if(ReqBody.raw_message.event.subtype==='message_deleted' ||( ReqBody.raw_message.event.message!=undefined && ReqBody.raw_message.event.message.subtype==='tombstone')){
         console.log("message deleted");
         issue.findOneAndRemove({messageID:ReqBody.raw_message.event.previous_message.ts},function(err,data){
+          if(err){console.log('err',err);}
            Jira.DeleteIssue(data.jiraID,domain, token);
           
         });
-        //issue.deleteOne({messageID:ReqBody.raw_message.event.previous_message.ts},function(err)
       
         console.log("Deleted from db");
       }
@@ -216,11 +220,11 @@ controller.on('file_share', function(bot, message) {
       else if(ReqBody.raw_message.event.subtype==='file_share'){
         //do nothing slack controller will handle this
       }
-      else if(ReqBody.raw_message.event.thread_ts===undefined && ReqBody.raw_message.event.text!==undefined){ //recieve a message without file
+      else if(ReqBody.raw_message.event.thread_ts===undefined && ReqBody.raw_message.event.text!==undefined && /#bug/.test(ReqBody.raw_message.event.text) ){ //recieve a message without file
         console.log("New message recieved");
 
-        
-          var respBody=Jira.CreateIssue("JIRA",ReqBody.raw_message.event.text,ReqBody.raw_message.event.text,"Bug", domain, token,addIssueDB,ReqBody.raw_message.event.ts);
+        var text=ReqBody.raw_message.event.text.replace('#bug',' ');
+          var respBody=Jira.CreateIssue("JIRA",text,text,"Bug", domain, token,addIssueDB,ReqBody.raw_message.event.ts);
 
           
           slackBot.replyInThread(ReqBody,"hi dude you added a new message");
