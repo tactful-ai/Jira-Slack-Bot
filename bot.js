@@ -16,7 +16,7 @@ var outDateIssues=new cronJob('5 8 * * 0',function(){    //run job 8:05 every su
   console.log('cronjob started');
  
 },null,true,'Africa/Cairo');
-var domain="jirabottac";
+var domain="jira-slack";
 var token="Basic bWFyeWFtbWVoYWJAZ21haWwuY29tOmROYWdqelRyQWlrMDV0blMyY2E1QjE5QQ==";
 var encodedString,domainName;
 mongoose.connect(process.env.dbString,
@@ -153,7 +153,7 @@ controller.on('file_share', function(bot, message) {
    var picStream=fs.createWriteStream(destination_path);
    picStream.on('close',function(){
      console.log("finished streaming");
-     var respBody=Jira.CreateIssue("MM",title,comment,"Bug", domain, token,addIssueDB,message.ts,Jira.AddAttachment,destination_path);
+     var respBody=Jira.CreateIssue("JIRA",title,comment,"Bug", domain, token,addIssueDB,message.ts,Jira.AddAttachment,destination_path);
    });
   request(options, function(err, res, body) {
       // body contains the content
@@ -218,10 +218,10 @@ function determineType(ReqBody,slackBot){
     //do nothing slack controller will handle this
   } else if(ReqBody.raw_message.event.thread_ts===undefined && ReqBody.raw_message.event.text!==undefined){ //recieve a message without file
     console.log("New message recieved");
-    Jira.CreateIssue("MM",ReqBody.raw_message.event.text,ReqBody.raw_message.event.text,"Bug", domain, token,addIssueDB,ReqBody.raw_message.event.ts).catch((err) => {
-      showErrorMessage(err, message);
+    Jira.CreateIssue("JIRA",ReqBody.raw_message.event.text,ReqBody.raw_message.event.text,"Bug", domain, token,addIssueDB,ReqBody.raw_message.event.ts).catch((err) => {
+      showErrorMessage(err, ReqBody);
     }).then((body) => {
-      showMessage(body, message);
+      showMessage(body, ReqBody);
     });
     slackBot.replyInThread(ReqBody,"hi dude you added a new message");
   }
