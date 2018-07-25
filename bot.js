@@ -333,66 +333,49 @@ var showMessage = (error, message) => {
 }
 
 var showErrorMessage = (error, message) => {
-  var b = {
-    "text": error,
-    "attachments": [
-        {
-            "text": "Do you want to retry ?",
-            "fallback": "You are unable to make this request!",
-            "callback_id": "retry_response",
-            "attachment_type": "default",
-            "actions": [
-                {
-                    "name": "game",
-                    "text": "Yes!",
-                    "type": "button",
-                    "value": "y"
-                },
-				{
-                    "name": "game",
-                    "text": "No",
-                    "type": "button",
-                    "value": "y"
-                }
-            ]
-        }
-    ]
-  }
   controller.storage.teams.get(message.team_id, (err, data) => {
     if (err) {
       console.log('Cannot get team data !', err)
     } else {
       let token = data.bot.token
-      let reqURL = `https://slack.com/api/chat.postEphemeral?token=${token}&channel=${message.channel}&user=${message.user}&text=${error}`
+      // let reqURL = `https://slack.com/api/chat.postEphemeral?token=${token}&channel=${message.channel}&user=${message.user}&text=${error}`
+      let reqURL = "https://slack.com/api/chat.postEphemeral"
+      let b = {
+        "token": token,
+        "channel": message.channel,
+        "user": message.user,
+        "text": error,
+        "attachments": [
+            {
+                "text": "Do you want to retry ?",
+                "fallback": "You are unable to make this request!",
+                "callback_id": "retry_response",
+                "attachment_type": "default",
+                "actions": [
+                    {
+                        "name": "game",
+                        "text": "Yes!",
+                        "type": "button",
+                        "value": "y"
+                    },
+            {
+                        "name": "game",
+                        "text": "No",
+                        "type": "button",
+                        "value": "y"
+                    }
+                ]
+            }
+        ]
+      }
       request({
         uri: reqURL,
         method: 'POST',
-        body: {
-          "text": error,
-          "attachments": [
-              {
-                  "text": "Do you want to retry ?",
-                  "fallback": "You are unable to make this request!",
-                  "callback_id": "retry_response",
-                  "attachment_type": "default",
-                  "actions": [
-                      {
-                          "name": "game",
-                          "text": "Yes!",
-                          "type": "button",
-                          "value": "y"
-                      },
-              {
-                          "name": "game",
-                          "text": "No",
-                          "type": "button",
-                          "value": "y"
-                      }
-                  ]
-              }
-          ]
-        },
-        json: true
+        body: b,
+        json: true,
+        headers: {
+          "Content-type": "application/json; charset=utf-8"
+        }
       },(err, res, body)=> {
         if (err){
           console.log('ERR', err)
