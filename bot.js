@@ -19,10 +19,12 @@ var outDateIssues=new cronJob('5 8 * * 0',function(){    //run job 8:05 every su
 var domain="jirabottac";
 var token="Basic bWFyeWFtbWVoYWJAZ21haWwuY29tOmROYWdqelRyQWlrMDV0blMyY2E1QjE5QQ==";
 var encodedString,domainName;
-mongoose.connect(process.env.dbString,{
-  keepAlive:true,
-  reconnectTries:Number.MAX_VALUE,
-});
+mongoose.connect(process.env.dbString,
+  {
+    keepAlive:true,
+    reconnectTries:Number.MAX_VALUE,
+  }
+);
 var db=mongoose.connection;
 
 var userSchema=mongoose.Schema({
@@ -159,99 +161,71 @@ controller.on('file_share', function(bot, message) {
       console.log('FILE RETRIEVE STATUS',res.statusCode);          
   }).pipe(picStream); // pipe output to filesystem
 });
-  
-     //function to determine message type
-     function determineType(ReqBody,slackBot){
-       if(ReqBody.raw_message.event.bot_id!==undefined){
-         //ignore
-       }
-       else if(typeof ReqBody.raw_message.event.thread_ts!=='undefined' ){     //reply on thread not a new issue
-         console.log("you added a new comment");
-         
-         issue.findOne({messageID:ReqBody.raw_message.event.thread_ts},function(err,data){
-           if(err){console.log(err);}
-          Jira.AddComment(data.jiraID,ReqBody.raw_message.event.text,domain, token,addCommentDB,ReqBody.raw_message.event.ts,ReqBody.raw_message.event.thread_ts).catch((err) => {
-            showMessage(err, message);
-          }).then((body) => {
-            showMessage(body, message);
-          })
- 
-         });
-       }
-       else if(typeof ReqBody.raw_message.event.previous_message!=='undefined' && typeof ReqBody.raw_message.event.previous_message.thread_ts!=='undefined' && ReqBody.raw_message.event.subtype==='message_deleted'){
-        issue.findOne({messageID:ReqBody.raw_message.event.previous_message.thread_ts},function(err,dataI){
-          comment.findOneAndRemove({commentID:ReqBody.raw_message.event.previous_message.ts},function(err,dataC){
-            Jira.DeleteComment(dataI.jiraID,dataC.jiraCommentID,domain, token).catch((err) => {
-              showMessage(err, message);
-            }).then((body) => {
-              showMessage(body, message);
-            })
-          });
-          
-       });
-      }
-       else if(typeof ReqBody.raw_message.event.previous_message!=='undefined' && typeof ReqBody.raw_message.event.previous_message.thread_ts!=='undefined' && ReqBody.raw_message.event.message.reply_count===undefined){
-        issue.findOne({messageID:ReqBody.raw_message.event.previous_message.thread_ts},function(err,dataI){
-          console.log(ReqBody.raw_message.event.previous_message.ts,'heree');
-          comment.findOne({commentID:ReqBody.raw_message.event.previous_message.ts},function(err,dataC){
-            
-           Jira.EditComment(dataI.jiraID,dataC.jiraCommentID,ReqBody.raw_message.event.message.text,domain, token).catch((err) => {
-            showMessage(err, message);
-          }).then((body) => {
-            showMessage(body, message);
-          })
-          });                                  
-          
+//function to determine message type
+function determineType(ReqBody,slackBot){
+    if(ReqBody.raw_message.event.bot_id!==undefined){
+      //ignore
+    }
+    else if(typeof ReqBody.raw_message.event.thread_ts!=='undefined' ){     //reply on thread not a new issue
+      console.log("you added a new comment");
+      issue.findOne({messageID:ReqBody.raw_message.event.thread_ts},function(err,data){
+        if(err){console.log(err);}
+        Jira.AddComment(data.jiraID,ReqBody.raw_message.event.text,domain, token,addCommentDB,ReqBody.raw_message.event.ts,ReqBody.raw_message.event.thread_ts).catch((err) => {
+          showErrorMessage(err, message);
+        }).then((body) => {
+          showMessage(body, message);
+        })
+      });
+    }
+    else if(typeof ReqBody.raw_message.event.previous_message!=='undefined' && typeof ReqBody.raw_message.event.previous_message.thread_ts!=='undefined' && ReqBody.raw_message.event.subtype==='message_deleted'){
+    issue.findOne({messageID:ReqBody.raw_message.event.previous_message.thread_ts},function(err,dataI){
+      comment.findOneAndRemove({commentID:ReqBody.raw_message.event.previous_message.ts},function(err,dataC){
+        Jira.DeleteComment(dataI.jiraID,dataC.jiraCommentID,domain, token).catch((err) => {
+          showErrorMessage(err, message);
+        }).then((body) => {
+          showMessage(body, message);
         });
-         
-
-       }
-      else if(ReqBody.raw_message.event.subtype==='message_deleted' ||( ReqBody.raw_message.event.message!=undefined && ReqBody.raw_message.event.message.subtype==='tombstone')){
-        console.log("message deleted");
-        issue.findOneAndRemove({messageID:ReqBody.raw_message.event.previous_message.ts},function(err,data){
-           Jira.DeleteIssue(data.jiraID,domain, token).catch((err) => {
-            showMessage(err, message);
-          }).then((body) => {
-            showMessage(body, message);
-          })
-          
+      });
+    });
+  } else if (typeof ReqBody.raw_message.event.previous_message!=='undefined' && typeof ReqBody.raw_message.event.previous_message.thread_ts!=='undefined' && ReqBody.raw_message.event.message.reply_count===undefined){
+    issue.findOne({messageID:ReqBody.raw_message.event.previous_message.thread_ts},function(err,dataI){
+      console.log(ReqBody.raw_message.event.previous_message.ts,'heree');
+      comment.findOne({commentID:ReqBody.raw_message.event.previous_message.ts},function(err,dataC){
+        Jira.EditComment(dataI.jiraID,dataC.jiraCommentID,ReqBody.raw_message.event.message.text,domain, token).catch((err) => {
+        showErrorMessage(err, message);
+        }).then((body) => {
+          showMessage(body, message);
         });
-        //issue.deleteOne({messageID:ReqBody.raw_message.event.previous_message.ts},function(err)
+      });                                  
+    });
+  } else if (ReqBody.raw_message.event.subtype==='message_deleted' ||( ReqBody.raw_message.event.message!=undefined && ReqBody.raw_message.event.message.subtype==='tombstone')){
+    console.log("message deleted");
+    issue.findOneAndRemove({messageID:ReqBody.raw_message.event.previous_message.ts},function(err,data){
+        Jira.DeleteIssue(data.jiraID,domain, token).catch((err) => {
+        showErrorMessage(err, message);
+      }).then((body) => {
+        showMessage(body, message);
+      })
       
-        console.log("Deleted from db");
-      }
-    
-      else if(ReqBody.raw_message.event.subtype==='message_changed' && ReqBody.raw_message.event.message.text!==ReqBody.raw_message.event.previous_message.text){
-        console.log("message changed",ReqBody.raw_message.event.subtype,ReqBody.raw_message.event.bot_id);
-        
-        ReqBody.raw_message.event.thread_ts=ReqBody.raw_message.event.message.thread_ts;
-          slackBot.replyInThread(ReqBody,"hi dude you edited this messsage");
-          
-        
-      }
-      else if(ReqBody.raw_message.event.subtype==='file_share'){
-        //do nothing slack controller will handle this
-      }
-      else if(ReqBody.raw_message.event.thread_ts===undefined && ReqBody.raw_message.event.text!==undefined){ //recieve a message without file
-        console.log("New message recieved");
-
-        
-          var respBody=Jira.CreateIssue("MM",ReqBody.raw_message.event.text,ReqBody.raw_message.event.text,"Bug", domain, token,addIssueDB,ReqBody.raw_message.event.ts).catch((err) => {
-            showMessage(err, message);
-          })
-
-          
-          slackBot.replyInThread(ReqBody,"hi dude you added a new message");
-          
-
-        
-
-      }
-
-     }
-     
-  
-
+    });
+    //issue.deleteOne({messageID:ReqBody.raw_message.event.previous_message.ts},function(err)
+    console.log("Deleted from db");
+  } else if(ReqBody.raw_message.event.subtype==='message_changed' && ReqBody.raw_message.event.message.text!==ReqBody.raw_message.event.previous_message.text){
+    console.log("message changed",ReqBody.raw_message.event.subtype,ReqBody.raw_message.event.bot_id);
+    ReqBody.raw_message.event.thread_ts=ReqBody.raw_message.event.message.thread_ts;
+    slackBot.replyInThread(ReqBody,"hi dude you edited this messsage");
+  } else if(ReqBody.raw_message.event.subtype==='file_share'){
+    //do nothing slack controller will handle this
+  } else if(ReqBody.raw_message.event.thread_ts===undefined && ReqBody.raw_message.event.text!==undefined){ //recieve a message without file
+    console.log("New message recieved");
+    Jira.CreateIssue("MM",ReqBody.raw_message.event.text,ReqBody.raw_message.event.text,"Bug", domain, token,addIssueDB,ReqBody.raw_message.event.ts).catch((err) => {
+      showErrorMessage(err, message);
+    }).then((body) => {
+      showMessage(body, message);
+    });
+    slackBot.replyInThread(ReqBody,"hi dude you added a new message");
+  }
+}
 //Start of the bot conversation
 controller.hears(['help'],'direct_message,direct_mention,mention', function(bot, message) {
   console.log(message);
@@ -268,7 +242,6 @@ controller.on('direct_message,direct_mention,mention', function(bot, message) {
 });
 
 controller.middleware.receive.use((bot, message, next) => {
-  
   if (message.type === 'dialog_submission') {
     console.log('Catched Dialog Reply ! ', message);
   }
@@ -338,9 +311,6 @@ controller.middleware.receive.use((bot, message, next) => {
         determineType(message,bot);
       }
     });
-
-  
-  
   next();
 });
 
@@ -352,6 +322,54 @@ var showMessage = (error, message) => {
       let token = data.bot.token
       let reqURL = `https://slack.com/api/chat.postEphemeral?token=${token}&channel=${message.channel}&text=${error}&user=${message.user}`
       request.post(reqURL, (err, res, body)=> {
+        if (err){
+          console.log('ERR', err)
+        } else {
+          console.log('BODY', body)
+        }
+      })
+    }
+  })
+}
+
+var showErrorMessage = (error, message) => {
+  var b = {
+    "text": error,
+    "attachments": [
+        {
+            "text": "Do you want to retry ?",
+            "fallback": "You are unable to make this request!",
+            "callback_id": "retry_response",
+            "attachment_type": "default",
+            "actions": [
+                {
+                    "name": "game",
+                    "text": "Yes!",
+                    "type": "button",
+                    "value": "y"
+                },
+				{
+                    "name": "game",
+                    "text": "No",
+                    "type": "button",
+                    "value": "y"
+                }
+            ]
+        }
+    ]
+  }
+  controller.storage.teams.get(message.team_id, (err, data) => {
+    if (err) {
+      console.log('Cannot get team data !', err)
+    } else {
+      let token = data.bot.token
+      let reqURL = `https://slack.com/api/chat.postEphemeral?token=${token}&channel=${message.channel}&user=${message.user}`
+      request({
+        uri: reqURL,
+        method: 'POST',
+        body: b,
+        json: true
+      },(err, res, body)=> {
         if (err){
           console.log('ERR', err)
         } else {
