@@ -9,14 +9,14 @@ var Jira = require('./Jira');
 var cronJob=require('cron').CronJob;
 var outDateIssues=new cronJob('5 8 * * 0',function(){    //run job 8:05 every sunday
   issue.deleteMany({
-    ts:{$gt:(Date.now()-43200)},
+    ts:{$lte:((Date.now()/(1000*60))-43200)},
   },function(err){
     if(err){console.log("err",err)};
   });
   console.log('cronjob started');
  
 },null,true,'Africa/Cairo');
-var domain="jirabottac";
+var domain="jira-slack";
 var token="Basic bWFyeWFtbWVoYWJAZ21haWwuY29tOmROYWdqelRyQWlrMDV0blMyY2E1QjE5QQ==";
 var encodedString,domainName;
 mongoose.connect(process.env.dbString,{
@@ -102,7 +102,7 @@ function addIssueDB(jiraIDD,messageIDD){
   var newMesage=new issue({
     jiraID:jiraIDD,
     messageID:messageIDD,
-    ts:(Date.now()/(1000*60))
+    ts:Math.round((Date.now()/(1000*60)))   // date in minutes
     });
     newMesage.save(function(err,newq){
       if(err){console.log(err,'err')};
@@ -151,7 +151,7 @@ controller.on('file_share', function(bot, message) {
    var picStream=fs.createWriteStream(destination_path);
    picStream.on('close',function(){
      console.log("finished streaming");
-     var respBody=Jira.CreateIssue("MM",title,comment,"Bug", domain, token,addIssueDB,message.ts,Jira.AddAttachment,destination_path);
+     var respBody=Jira.CreateIssue("JIRA",title,comment,"Bug", domain, token,addIssueDB,message.ts,Jira.AddAttachment,destination_path);
    });
   request(options, function(err, res, body) {
       // body contains the content
@@ -220,7 +220,7 @@ controller.on('file_share', function(bot, message) {
         console.log("New message recieved");
 
         
-          var respBody=Jira.CreateIssue("MM",ReqBody.raw_message.event.text,ReqBody.raw_message.event.text,"Bug", domain, token,addIssueDB,ReqBody.raw_message.event.ts);
+          var respBody=Jira.CreateIssue("JIRA",ReqBody.raw_message.event.text,ReqBody.raw_message.event.text,"Bug", domain, token,addIssueDB,ReqBody.raw_message.event.ts);
 
           
           slackBot.replyInThread(ReqBody,"hi dude you added a new message");
