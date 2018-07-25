@@ -11,7 +11,7 @@ exports.CreateIssue =function (projectName, summary, description, issuetype, dom
           uri: `https://${domain}.atlassian.net/rest/api/2/issue`,
             body:{
             "fields": {
-              "project":
+              "projectt":
               {
                  "key": projectName
               },
@@ -49,7 +49,7 @@ exports.CreateIssue =function (projectName, summary, description, issuetype, dom
         if (response.statusCode === 400)
             {
                 console.log(response.statusCode + ':  error.');
-                reject("Something Went Wrong");
+                reject(new Error('Something Went Wrong'));
             };
         });
     });
