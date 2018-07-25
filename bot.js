@@ -218,12 +218,11 @@ function determineType(ReqBody,slackBot){
     //do nothing slack controller will handle this
   } else if(ReqBody.raw_message.event.thread_ts===undefined && ReqBody.raw_message.event.text!==undefined){ //recieve a message without file
     console.log("New message recieved");
-    Jira.CreateIssue("JIRA",ReqBody.raw_message.event.text,ReqBody.raw_message.event.text,"Bug", domain, token,addIssueDB,ReqBody.raw_message.event.ts).catch((err) => {
-      showErrorMessage(err.message, ReqBody);
-
-    }).then((body) => {
+    Jira.CreateIssue("JIRA",ReqBody.raw_message.event.text,ReqBody.raw_message.event.text,"Bug", domain, token,addIssueDB,ReqBody.raw_message.event.ts).then((body) => {
       showMessage(body, ReqBody);
-    });
+    }).catch((err) => {
+      showErrorMessage(err.message, ReqBody);
+    })
     slackBot.replyInThread(ReqBody,"hi dude you added a new message");
   }
 }
