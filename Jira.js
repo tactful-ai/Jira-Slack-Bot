@@ -30,7 +30,7 @@ exports.CreateIssue =function (projectName, summary, description, issuetype, dom
           if(error)
             {
                 console.log(error, null);
-                reject(error);
+                reject("Connection Error!");
             }
         if (response.statusCode === 201)
             {
@@ -44,12 +44,12 @@ exports.CreateIssue =function (projectName, summary, description, issuetype, dom
                 else {
                     callBackDB(body.id,messageID);
                 }
-                resolve(body);
+                resolve("Issue Created !");
             }
         if (response.statusCode === 400)
             {
                 console.log(response.statusCode + ':  error.');
-                reject(body);
+                reject("Something Went Wrong");
             };
         });
     });
@@ -68,17 +68,17 @@ exports.DeleteIssue = function (IssueID, domain, Token)
           if(error)
             {
                 console.log(error, null);
-                reject(error);
+                reject("Connection Error");
             }
         if (response.statusCode === 204)
             {
                 console.log("Deleted.");
-                resolve(body);
+                resolve("Issue Deleted");
             }
         if (response.statusCode === 400)
             {
                 console.log(response.statusCode + ':  error.');
-                reject(body);
+                reject("Somthing Went Wrong");
             };
         });
     });
@@ -101,17 +101,17 @@ exports.AddComment =function (IssueID, comment, domain, Token,callBackDB,message
           if(error)
             {
                 console.log(error, null);
-                reject(error);
+                reject("Connection Error");
             }
         if (response.statusCode === 201)
             {
                 console.log("Comment Posted.");
-                resolve(body);
+                resolve("Comment Added");
             }
         if (response.statusCode === 400)
             {
                 console.log(response.statusCode + ':  error.');
-                reject(body);
+                reject("Somthing Went Wrong");
             };
         });
     });
@@ -129,17 +129,17 @@ exports.DeleteComment = function (IssueID, CommentID, domain, Token)
           if(error)
             {
                 console.log(error, null);
-                reject(error);
+                reject("Connection Error");
             }
         if (response.statusCode === 204)
             {
                 console.log("Deleted.");
-                resolve(body);
+                resolve("Comment Deleted !");
             }
         if (response.statusCode === 400)
             {
                 console.log(response.statusCode + ':  error.');
-                reject(body);
+                reject("Somthing Went Wrong");
             };
         });
     });
@@ -160,18 +160,18 @@ exports.EditComment = function (IssueID, CommentID, UpdatedComment, domain, Toke
           if(error)
             {
                 console.log(error, null);
-                reject(error);
+                reject("Connection Error");
             }
         if (response.statusCode === 200)
             {
                 console.log("Updated.");
-                resolve(body);
+                resolve("Comment Editted !");
             }
         if (response.statusCode === 400)
             {
                 console.log(response.statusCode + ':  error.');
                 console.log(error);
-                reject(body);
+                reject("Opps! Somthing Went wrong");
             };
         });
     });
@@ -195,13 +195,13 @@ exports.AddAttachment = function (IssueID, Attachment, domain, Token){
             },
             function(err, response, body) {
                 if (err) {
-                    reject(err);
+                    reject("Connection Error");
                 } else {
                     console.log('Upload successful!');
                     fs.unlink(Attachment,function(err){
                         console.log("file deleted");
                     });
-                    resolve(body);
+                    resolve("Done");
                 }
             }
         );
