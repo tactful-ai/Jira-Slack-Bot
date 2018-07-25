@@ -24,13 +24,13 @@ mongoose.connect(process.env.dbString,{
   reconnectTries:Number.MAX_VALUE,
 });
 var db=mongoose.connection;
-
-var userSchema=mongoose.Schema({
-userID:String,
-jiraEncodedToken:String,
-domainName:String
-});
+var channelSchema = mongoose.Schema({
+  channelID:String,
+  jiraEncodedToken:String,
+  domainName:String
+})
 var issueSchema=mongoose.Schema({
+  channelID:String,
 jiraID:String,
 messageID:String,
 ts:Number
@@ -40,7 +40,7 @@ var commentSchema=mongoose.Schema({
    jiraCommentID:String,
    commentID:String
 });
-var user=mongoose.model('user',userSchema);
+var channel= mongoose.model('channel', channelSchema);
 var comment=mongoose.model('comment',commentSchema);
 var issue=mongoose.model('issue',issueSchema);
 db.once('open',function() 
@@ -277,16 +277,16 @@ controller.on('dialog_submission', (bot, message) => {
   domainName = submission.domain;
   bot.dialogOk();
   bot.reply(message, 'Got it!');
-  var n_user = user({
-    userID: message.user,
+  var n_channel = channel({
+    channelID: message.channel,
     jiraEncodedToken: encodedString,
     domainName: domainName
   })
-  n_user.save((err, usr) =>{ 
+  n_channel.save((err, usr) =>{ 
     if (err) {
-      console.log('cannot save user !', err)
+      console.log('cannot save channel !', err)
     } else {
-      console.log('User Saved !', usr)
+      console.log('Channel Saved !', usr)
     }
   })
 });
@@ -294,8 +294,8 @@ controller.on('dialog_submission', (bot, message) => {
 controller.middleware.receive.use((bot, message, next) => {
    //console.log(message);
   if(message.command!==undefined || message.type==='dialog_submission'){ next();}
-    var userID = message.event.user!==undefined?message.event.user:message.raw_message.event.previous_message.user;
-    user.findOne({'userID': userID}, (err, usr) => {
+    var channelID = message.raw_message.event.channel;
+    channel.findOne({'channelID': channelID}, (err, usr) => {
       if(err){
         console.log('err', err);
       } else if(usr === null) {
@@ -304,7 +304,7 @@ controller.middleware.receive.use((bot, message, next) => {
             console.log('Cannot get team data !', err)
           } else {
             let token = data.bot.token
-            let errM = 'Opps !, Looks like you did\'t register your jira account, please use the slash commant \\initt to register'
+            let errM = 'Opps !, Looks like you did\'t register your jira account, please use the slash command \\initt to register'
             let reqURL = `https://slack.com/api/chat.postEphemeral?token=${token}&channel=${message.channel}&text=${errM}&user=${message.user}`
             request.post(reqURL, (err, res, body)=> {
               if (err){
