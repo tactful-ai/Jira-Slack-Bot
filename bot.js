@@ -170,41 +170,41 @@ function determineType(ReqBody,slackBot){
       console.log("you added a new comment");
       issue.findOne({messageID:ReqBody.raw_message.event.thread_ts},function(err,data){
         if(err){console.log(err);}
-        Jira.AddComment(data.jiraID,ReqBody.raw_message.event.text,domain, token,addCommentDB,ReqBody.raw_message.event.ts,ReqBody.raw_message.event.thread_ts).catch((err) => {
-          showErrorMessage(err, ReqBody);
-        }).then((body) => {
+        Jira.AddComment(data.jiraID,ReqBody.raw_message.event.text,domain, token,addCommentDB,ReqBody.raw_message.event.ts,ReqBody.raw_message.event.thread_ts).then((body) => {
           showMessage(body, ReqBody);
+        }).catch((err) => {
+          showErrorMessage(err, ReqBody);
         })
       });
     }
     else if(typeof ReqBody.raw_message.event.previous_message!=='undefined' && typeof ReqBody.raw_message.event.previous_message.thread_ts!=='undefined' && ReqBody.raw_message.event.subtype==='message_deleted'){
     issue.findOne({messageID:ReqBody.raw_message.event.previous_message.thread_ts},function(err,dataI){
       comment.findOneAndRemove({commentID:ReqBody.raw_message.event.previous_message.ts},function(err,dataC){
-        Jira.DeleteComment(dataI.jiraID,dataC.jiraCommentID,domain, token).catch((err) => {
-          showErrorMessage(err, ReqBody);
-        }).then((body) => {
+        Jira.DeleteComment(dataI.jiraID,dataC.jiraCommentID,domain, token).then((body) => {
           showMessage(body, ReqBody);
-        });
+        }).catch((err) => {
+          showErrorMessage(err, ReqBody);
+        })
       });
     });
   } else if (typeof ReqBody.raw_message.event.previous_message!=='undefined' && typeof ReqBody.raw_message.event.previous_message.thread_ts!=='undefined' && ReqBody.raw_message.event.message.reply_count===undefined){
     issue.findOne({messageID:ReqBody.raw_message.event.previous_message.thread_ts},function(err,dataI){
       console.log(ReqBody.raw_message.event.previous_message.ts,'heree');
       comment.findOne({commentID:ReqBody.raw_message.event.previous_message.ts},function(err,dataC){
-        Jira.EditComment(dataI.jiraID,dataC.jiraCommentID,ReqBody.raw_message.event.message.text,domain, token).catch((err) => {
-        showErrorMessage(err.message, ReqBody);
-        }).then((body) => {
+        Jira.EditComment(dataI.jiraID,dataC.jiraCommentID,ReqBody.raw_message.event.message.text,domain, token).then((body) => {
           showMessage(body, ReqBody);
-        });
+        }).catch((err) => {
+        showErrorMessage(err.message, ReqBody);
+        })
       });
     });
   } else if (ReqBody.raw_message.event.subtype==='message_deleted' ||( ReqBody.raw_message.event.message!=undefined && ReqBody.raw_message.event.message.subtype==='tombstone')){
     console.log("message deleted");
     issue.findOneAndRemove({messageID:ReqBody.raw_message.event.previous_message.ts},function(err,data){
-        Jira.DeleteIssue(data.jiraID,domain, token).catch((err) => {
+        Jira.DeleteIssue(data.jiraID,domain, token).then((body) => {
+          showMessage(body, ReqBody);
+        }).catch((err) => {
         showErrorMessage(err, ReqBody);
-      }).then((body) => {
-        showMessage(body, ReqBody);
       })
 
     });
