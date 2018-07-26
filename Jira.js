@@ -11,7 +11,7 @@ exports.CreateIssue =function (projectName, summary, description, issuetype, dom
           uri: `https://${domain}.atlassian.net/rest/api/2/issue`,
             body:{
             "fields": {
-              "projectt":
+              "project":
               {
                  "key": projectName
               },
