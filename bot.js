@@ -150,15 +150,22 @@ controller.on('file_share', function(bot, message) {
 });
 //function to determine message type
 function determineType(ReqBody,slackBot){
+  var text=ReqBody.raw_message.event.text;
+  var threadTs=ReqBody.raw_message.event.thread_ts;
+  var previousMessage=ReqBody.raw_message.event.previous_message;
+  var channelIDD=ReqBody.event.channel;
+  var eventTs=ReqBody.raw_message.event.ts;
+  var  subType=ReqBody.raw_message.event.subtype;
+  var messageRaw=ReqBody.raw_message.event.message;
     if(ReqBody.raw_message.event.bot_id!==undefined){
       //ignore
     }
-    else if(typeof ReqBody.raw_message.event.thread_ts!=='undefined' ){     //reply on thread not a new issue
+    else if(typeof threadTs!=='undefined' ){     //reply on thread not a new issue
       console.log("you added a new comment");
-      issue.findOne({messageID:ReqBody.raw_message.event.thread_ts, channelID:ReqBody.event.channel},function(err,data){
+      issue.findOne({messageID:threadTs, channelID:channelIDD},function(err,data){
         if(err){console.log(err);}
         if(data!=null){
-          Jira.AddComment(data.jiraID,ReqBody.raw_message.event.text,domain, token,addCommentDB,ReqBody.raw_message.event.ts,ReqBody.raw_message.event.thread_ts).then((body) => {
+          Jira.AddComment(data.jiraID,text,domain, token,addCommentDB,eventTs,threadTs).then((body) => {
             showMessage(body, ReqBody);
           }).catch((err) => {
             showErrorMessage(err, ReqBody);
@@ -166,9 +173,9 @@ function determineType(ReqBody,slackBot){
         }
       });
     }
-    else if(typeof ReqBody.raw_message.event.previous_message!=='undefined' && typeof ReqBody.raw_message.event.previous_message.thread_ts!=='undefined' && ReqBody.raw_message.event.subtype==='message_deleted'){
-    issue.findOne({messageID:ReqBody.raw_message.event.previous_message.thread_ts,channelID:ReqBody.event.channel},function(err,dataI){
-      comment.findOneAndRemove({commentID:ReqBody.raw_message.event.previous_message.ts,channelID:ReqBody.event.channel},function(err,dataC){
+    else if(typeof previousMessage!=='undefined' && typeof previousMessage.thread_ts!=='undefined' && subType==='message_deleted'){
+    issue.findOne({messageID:previousMessage.thread_ts,channelID:channelIDD},function(err,dataI){
+      comment.findOneAndRemove({commentID:previousMessage.ts,channelID:channelIDD},function(err,dataC){
         Jira.DeleteComment(dataI.jiraID,dataC.jiraCommentID,domain, token).then((body) => {
           showMessage(body, ReqBody);
         }).catch((err) => {
@@ -176,20 +183,20 @@ function determineType(ReqBody,slackBot){
         })
       });
     });
-  } else if (typeof ReqBody.raw_message.event.previous_message!=='undefined' && typeof ReqBody.raw_message.event.previous_message.thread_ts!=='undefined' && ReqBody.raw_message.event.message.reply_count===undefined){
-    issue.findOne({messageID:ReqBody.raw_message.event.previous_message.thread_ts},function(err,dataI){
-      console.log(ReqBody.raw_message.event.previous_message.ts,'heree');
-      comment.findOne({commentID:ReqBody.raw_message.event.previous_message.ts,channelID:ReqBody.event.channel},function(err,dataC){
-        Jira.EditComment(dataI.jiraID,dataC.jiraCommentID,ReqBody.raw_message.event.message.text,domain, token).then((body) => {
+  } else if (typeof previousMessage!=='undefined' && typeof previousMessage.thread_ts!=='undefined' && messageRaw.reply_count===undefined){
+    issue.findOne({messageID:previousMessage.thread_ts},function(err,dataI){
+      console.log(previousMessage.ts,'heree');
+      comment.findOne({commentID:previousMessage.ts,channelID:channelIDD},function(err,dataC){
+        Jira.EditComment(dataI.jiraID,dataC.jiraCommentID,messageRaw.text,domain, token).then((body) => {
           showMessage(body, ReqBody);
         }).catch((err) => {
         showErrorMessage(err.message, ReqBody);
         })
       });
     });
-  } else if (ReqBody.raw_message.event.subtype==='message_deleted' ||( ReqBody.raw_message.event.message!=undefined && ReqBody.raw_message.event.message.subtype==='tombstone')){
+  } else if (subType==='message_deleted' ||( messageRaw!=undefined && messageRaw.subtype==='tombstone')){
     console.log("message deleted");
-    issue.findOneAndRemove({messageID:ReqBody.raw_message.event.previous_message.ts,channelID:ReqBody.event.channel},function(err,data){
+    issue.findOneAndRemove({messageID:previousMessage.ts,channelID:channelIDD},function(err,data){
         Jira.DeleteIssue(data.jiraID,domain, token).then((body) => {
           showMessage(body, ReqBody);
         }).catch((err) => {
@@ -197,17 +204,17 @@ function determineType(ReqBody,slackBot){
       })
 
     });
-    //issue.deleteOne({messageID:ReqBody.raw_message.event.previous_message.ts},function(err)
+    //issue.deleteOne({messageID:previousMessage.ts},function(err)
     console.log("Deleted from db");
-  } else if(ReqBody.raw_message.event.subtype==='message_changed' && ReqBody.raw_message.event.message.text!==ReqBody.raw_message.event.previous_message.text){
-    console.log("message changed",ReqBody.raw_message.event.subtype,ReqBody.raw_message.event.bot_id);
-    //ReqBody.raw_message.event.thread_ts=ReqBody.raw_message.event.message.thread_ts;
+  } else if(subType==='message_changed' && messageRaw.text!==previousMessage.text){
+    console.log("message changed",subType,ReqBody.raw_message.event.bot_id);
+    //threadTs=messageRaw.thread_ts;
     slackBot.replyInThread(ReqBody,"hi dude you edited this messsage");
-  } else if(ReqBody.raw_message.event.subtype==='file_share'){
+  } else if(subType==='file_share'){
     //do nothing slack controller will handle this
-  } else if(ReqBody.raw_message.event.thread_ts===undefined && ReqBody.raw_message.event.text!==undefined && /#bug/.test(ReqBody.raw_message.event.text)){ //recieve a message without file
+  } else if(threadTs===undefined && text!==undefined && /#bug/.test(text)){ //recieve a message without file
     console.log("New message recieved");
-    Jira.CreateIssue("JIRA",ReqBody.raw_message.event.text,ReqBody.raw_message.event.text,"Bug", domain, token,addIssueDB,ReqBody.raw_message.event.ts,ReqBody.event.channel).then((body) => {
+    Jira.CreateIssue("JIRA",text,text,"Bug", domain, token,addIssueDB,eventTs,channelIDD).then((body) => {
       showMessage(body, ReqBody);
     }).catch((err) => {
       showErrorMessage(err.message, ReqBody);
