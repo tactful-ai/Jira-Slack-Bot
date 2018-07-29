@@ -16,8 +16,7 @@ var outDateIssues=new cronJob('5 8 * * 0',function(){    //run job 8:05 every su
   console.log('cronjob started');
 
 },null,true,'Africa/Cairo');
-var domain="jira-slack";
-var token="Basic bWFyeWFtbWVoYWJAZ21haWwuY29tOmROYWdqelRyQWlrMDV0blMyY2E1QjE5QQ==";
+
 mongoose.connect(process.env.dbString,
   {
     keepAlive:true,
@@ -132,9 +131,7 @@ function addCommentDB(commentIDD,jiraCommentIDD,threadID,channelIDD){
 
 }
 
-controller.on('message_received', function(bot, message) {
-  console.log("something happend");
-});
+
 
 controller.on('file_share', function(bot, message) {
 
@@ -163,9 +160,9 @@ controller.on('file_share', function(bot, message) {
       domain=data.domainName;
       token=data.jiraEncodedToken;
      Jira.CreateIssue("JIRA",title,comment,type, domain, token,addIssueDB,message.ts,message.event.channel,Jira.AddAttachment,destination_path).then((body) => {
-      showMessage(body, message );
+      botTalk.showMessage(body, message );
     }).catch((err) => {
-      showErrorMessage(err.message, message);
+      botTalk.showErrorMessage(err.message, message);
     });
   })
    });
@@ -176,6 +173,9 @@ controller.on('file_share', function(bot, message) {
   }).pipe(picStream); // pipe output to filesystem
 }
 });
+var botTalk=require('./botTalk');
+botTalk.slash(controller);
+
 //function to determine message type
 function determineType(ReqBody,slackBot){
   var text=ReqBody.raw_message.event.text;
@@ -202,9 +202,9 @@ function determineType(ReqBody,slackBot){
       
         if(data!=null){
           Jira.AddComment(data.jiraID,text,domain, token,addCommentDB,eventTs,threadTs,channelIDD).then((body) => {
-            showMessage(body, ReqBody);
+            botTalk.showMessage(err, ReqBody,controller);
           }).catch((err) => {
-            showErrorMessage(err, ReqBody);
+            botTalk.showErrorMessage(err, ReqBody,controller);
           })
         }
       });
@@ -213,9 +213,9 @@ function determineType(ReqBody,slackBot){
     issue.findOne({messageID:previousMessage.thread_ts,channelID:channelIDD},function(err,dataI){
       comment.findOneAndRemove({commentID:previousMessage.ts,channelID:channelIDD},function(err,dataC){
         Jira.DeleteComment(dataI.jiraID,dataC.jiraCommentID,domain, token).then((body) => {
-          showMessage(body, ReqBody);
+          botTalk.showMessage(err, ReqBody,controller);
         }).catch((err) => {
-          showErrorMessage(err, ReqBody);
+          botTalk.showErrorMessage(err, ReqBody,controller);
         })
       });
     });
@@ -224,9 +224,9 @@ function determineType(ReqBody,slackBot){
       console.log(previousMessage.ts,'heree');
       comment.findOne({commentID:previousMessage.ts,channelID:channelIDD},function(err,dataC){
         Jira.EditComment(dataI.jiraID,dataC.jiraCommentID,messageRaw.text,domain, token).then((body) => {
-          showMessage(body, ReqBody);
+          botTalk.showMessage(err, ReqBody,controller);
         }).catch((err) => {
-        showErrorMessage(err.message, ReqBody);
+        botTalk.showErrorMessage(err.message, ReqBody);
         })
       });
     });
@@ -234,9 +234,9 @@ function determineType(ReqBody,slackBot){
     console.log("message deleted");
     issue.findOneAndRemove({messageID:previousMessage.ts,channelID:channelIDD},function(err,data){
         Jira.DeleteIssue(data.jiraID,domain, token).then((body) => {
-          showMessage(body, ReqBody);
+          botTalk.showMessage(err, ReqBody,controller);
         }).catch((err) => {
-        showErrorMessage(err, ReqBody);
+        botTalk.showErrorMessage(err, ReqBody,controller);
       })
 
     });
@@ -251,9 +251,9 @@ function determineType(ReqBody,slackBot){
   } else if(threadTs===undefined && text!==undefined && type!==null){ //recieve a message without file
     console.log("New message recieved");
     Jira.CreateIssue("JIRA",text,text,type, domain, token,addIssueDB,eventTs,channelIDD).then((body) => {
-      showMessage(body, ReqBody);
+      botTalk.showMessage(body, ReqBody,controller);
     }).catch((err) => {
-      showErrorMessage(err.message, ReqBody);
+      botTalk.showErrorMessage(err.message, ReqBody,controller);
     })
     slackBot.replyInThread(ReqBody,"hi dude you added a new message");
   }
@@ -262,35 +262,14 @@ function determineType(ReqBody,slackBot){
   
     
 }
+
 //Start of the bot conversation
-controller.hears(['help'],'direct_message,direct_mention,mention', function(bot, message) {
-  console.log(message);
- bot.reply(message,"Hello <@"+message.user +"> i'm here to help delivering your issues to jira");
-});
-controller.hears(['hello', 'hi'],'direct_message,direct_mention,mention', function(bot, message) {
- bot.reply(message,"Greetings Master");
-
-});
 
 
-controller.middleware.receive.use((bot, message, next) => {
-  if (message.type === 'dialog_submission') {
-    console.log('Catched Dialog Reply ! ', message);
-  }
-  next();
-});
 
-controller.on('slash_command', (bot, message) => {
-  bot.replyPrivate(message, 'Ok Working on!');
-  var info = message.text.split(',');
-  var dialog = bot.createDialog('Jira Initialization Form', 'jira-init', 'Submit')
-  .addText('Username', 'username', info[0] || '')
-  .addText('Authentication Token', 'token', info[1] || '')
-  .addText('Domain', 'domain', '');
-  bot.replyWithDialog(message, dialog.asObject(), (err, res) => {
-    // console.log(res);
-  });
-});
+
+
+
 
 controller.on('dialog_submission', (bot, message) => {
   
@@ -347,76 +326,3 @@ controller.middleware.receive.use((bot, message, next) => {
   next();
 });
 
-var showMessage = (error, message) => {
-  controller.storage.teams.get(message.team_id, (err, data) => {
-    if (err) {
-      console.log('Cannot get team data !', err)
-    } else {
-      let token = data.bot.token
-      let reqURL = `https://slack.com/api/chat.postEphemeral?token=${token}&channel=${message.channel}&text=${error}&user=${message.user}`
-      request.post(reqURL, (err, res, body)=> {
-        if (err){
-          console.log('ERR', err)
-        } else {
-          console.log('BODY', body)
-        }
-      })
-    }
-  })
-}
-
-var showErrorMessage = (error, message) => {
-  controller.storage.teams.get(message.team_id, (err, data) => {
-    if (err) {
-      console.log('Cannot get team data !', err)
-    } else {
-      let token = data.bot.token
-      // let reqURL = `https://slack.com/api/chat.postEphemeral?token=${token}&channel=${message.channel}&user=${message.user}&text=${error}`
-      let reqURL = "https://slack.com/api/chat.postEphemeral"
-      let b = {
-        //"token": token,
-        "channel": message.channel,
-        "user": message.user,
-        "text": error,
-        "attachments": [
-            {
-                "text": "Do you want to retry ?",
-                "fallback": "You are unable to make this request!",
-                "callback_id": "retry_response",
-                "attachment_type": "default",
-                "actions": [
-                    {
-                        "name": "game",
-                        "text": "Yes!",
-                        "type": "button",
-                        "value": "y"
-                    },
-            {
-                        "name": "game",
-                        "text": "No",
-                        "type": "button",
-                        "value": "y"
-                    }
-                ]
-            }
-        ]
-      }
-      request({
-        uri: reqURL,
-        method: 'POST',
-        body: b,
-        json: true,
-        headers: {
-          "Content-type": "application/json; charset=utf-8",
-          "Authorization": `Bearer ${token}`
-        }
-      },(err, res, body)=> {
-        if (err){
-          console.log('ERR', err)
-        } else {
-          console.log('BODY', body)
-        }
-      })
-    }
-  })
-}
