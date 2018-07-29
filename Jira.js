@@ -4,15 +4,14 @@ var request = require("request");
 var fs = require('fs');
 //Create Issue
 exports.CreateIssue =function (projectName, summary, description, issuetype, domain, Token,callBackDB,messageID,channelID,callBackAttach,path)
-{
+{   
     return new Promise((resolve, reject) => {
         request({
             headers:{Authorization: Token},
           uri: `https://${domain}.atlassian.net/rest/api/2/issue`,
             body:{
             "fields": {
-              "project":
-              {
+              "project":{
                  "key": projectName
               },
               "summary": summary,
@@ -38,11 +37,11 @@ exports.CreateIssue =function (projectName, summary, description, issuetype, dom
                 console.log(body);
                 if(typeof callBackAttach==='function'){
                     callBackAttach(body.key,path,domain,Token);
-                    callBackDB(body.id,messageID);
+                    callBackDB(body.id,messageID,channelID);
     
                 }
                 else {
-                    callBackDB(body.id,messageID);
+                    callBackDB(body.id,messageID,channelID);
                 }
                 resolve("Issue Created !");
             }
@@ -84,8 +83,9 @@ exports.DeleteIssue = function (IssueID, domain, Token)
     });
 }
 //Add Comment
-exports.AddComment =function (IssueID, comment, domain, Token,callBackDB,messageID,threadID)
+exports.AddComment =function (IssueID, comment, domain, Token,callBackDB,messageID,threadID,channelIDD)
 {
+    console.log("hi coment");
     return new Promise((resolve, reject) => {
         request({
             headers:{Authorization: Token },
@@ -97,7 +97,7 @@ exports.AddComment =function (IssueID, comment, domain, Token,callBackDB,message
           json: true
         }, function(error, response, body) {
           
-          callBackDB(messageID,body.id,threadID);
+          callBackDB(messageID,body.id,threadID,channelIDD);
           if(error)
             {
                 console.log(error, null);
@@ -117,7 +117,7 @@ exports.AddComment =function (IssueID, comment, domain, Token,callBackDB,message
     });
 }
 //Delete Comment
-exports.DeleteComment = function (IssueID, CommentID, domain, Token)
+exports.DeleteComment = function (IssueID, CommentID, domain, Token) //todo remove comment from db
 {
     return new Promise((resolve, reject) => {
         request({
