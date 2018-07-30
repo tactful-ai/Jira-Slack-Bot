@@ -34,7 +34,7 @@ var channelSchema = mongoose.Schema({
   channelID: String,
   jiraEncodedToken: String,
   domainName: String
-})
+});
 var issueSchema = mongoose.Schema({
   channelID: String,
   jiraID: String,
@@ -132,7 +132,7 @@ function findCreds(channelIDD){
   return new Promise(function(resolve,reject){
     channel.findOne({channelID:channelIDD},function(err,data){
       if(err){console.log(err);}
-      console.log("data");
+      
       resolve(data);
      });
 
@@ -194,8 +194,8 @@ controller.on('file_share', function(bot, message) {
   var title=message.files[0].title;
   var comment=message.raw_message.event.text===undefined?'No Comment':message.raw_message.event.text;
   var messageId=message.ts;
-  var type;
-  console.log(title,comment,messageId);
+  var typeObj;
+
  if( determineIssueType(comment)!=null || determineIssueType(title)!=null ){
    typeObj=determineIssueType(comment)?determineIssueType(comment):determineIssueType(title);
   var options = {
@@ -217,7 +217,7 @@ controller.on('file_share', function(bot, message) {
     }).catch((err) => {
       botTalk.showErrorMessage(err.message, message,controller);
     });
-  })
+  });
    });
   request(options, function(err, res, body) {
       // body contains the content
@@ -258,7 +258,7 @@ function determineType(ReqBody,slackBot){
             botTalk.showMessage(body, ReqBody,controller);
           }).catch((err) => {
             botTalk.showErrorMessage(err, ReqBody,controller);
-          })
+          });
         }
       });
     }
@@ -270,7 +270,7 @@ function determineType(ReqBody,slackBot){
         }).catch((err) => {
           botTalk.showErrorMessage(err, ReqBody,controller);
         });
-      })
+      });
     });
   } else if (typeof previousMessage!=='undefined' && typeof previousMessage.thread_ts!=='undefined' && messageRaw.reply_count===undefined){
     issue.findOne({messageID:previousMessage.thread_ts},function(err,dataI){
@@ -280,7 +280,7 @@ function determineType(ReqBody,slackBot){
           botTalk.showMessage(body, ReqBody,controller);
         }).catch((err) => {
         botTalk.showErrorMessage(err.message, ReqBody);
-        })
+        });
       });
     });
   } else if (subType==='message_deleted' ||( messageRaw!=undefined && messageRaw.subtype==='tombstone')){
@@ -290,7 +290,7 @@ function determineType(ReqBody,slackBot){
           botTalk.showMessage(body, ReqBody,controller);
         }).catch((err) => {
         botTalk.showErrorMessage(err, ReqBody,controller);
-      })
+      });
 
     });
     //issue.deleteOne({messageID:previousMessage.ts},function(err)
@@ -307,7 +307,7 @@ function determineType(ReqBody,slackBot){
       botTalk.showMessage(body, ReqBody,controller);
     }).catch((err) => {
       botTalk.showErrorMessage(err.message, ReqBody,controller);
-    })
+    });
     slackBot.replyInThread(ReqBody, "hi dude you added a new message");
   }
     
@@ -337,14 +337,14 @@ controller.on('dialog_submission', (bot, message) => {
     channelID: message.channel,
     jiraEncodedToken: encodedString,
     domainName: domainName
-  })
+  });
   n_channel.save((err, usr) => {
     if (err) {
       console.log('cannot save channel !', err)
     } else {
       console.log('Channel Saved !', usr)
     }
-  })
+  });
 });
 
 controller.middleware.receive.use((bot, message, next) => {
@@ -368,9 +368,9 @@ controller.middleware.receive.use((bot, message, next) => {
               } else {
                 console.log('BODYN', body)
               }
-            })
+            });
           }
-        })
+        });
       }
       else{
         determineType(message,bot);
