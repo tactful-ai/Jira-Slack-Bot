@@ -191,7 +191,7 @@ function addCommentDB(commentIDD,jiraCommentIDD,threadID,channelIDD){
 controller.on('file_share', function(bot, message) {
 
   console.log(message);
-  var destination_path = './uploadedfiles/' + message.files[0].name;
+  var destination_path = message.files[0].name;
   var url = message.files[0].url_private;
   var title=message.files[0].title;
   var comment=message.raw_message.event.text===undefined?'No Comment':message.raw_message.event.text;
