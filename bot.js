@@ -36,7 +36,7 @@ var issueSchema = mongoose.Schema({
   jiraID: String,
   messageID: String,
   ts: Number,
-  Domain: String
+  domain: String
 });
 var commentSchema = mongoose.Schema({
   channelID: String,
