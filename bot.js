@@ -69,13 +69,16 @@ var bot_options = {
   studio_command_uri: process.env.studio_command_uri
 };
 bot_options.json_file_store = __dirname + '/.data/db/'; // store user data in a simple JSON format
-/*
+
 //Post message on slack when issue state updated
+
 function MsgOnSlack(textmsg, channelID) {
+  var Token = process.env.botToken;
+  //console.log(Token);
       request.post({
-      url:"https://slack.com/api/chat.postMessage",
+      uri:`https://slack.com/api/chat.postMessage?token=${Token}&channel=${channelID}&text=${textmsg}`,
       options: {
-        token : process.env.botToken,
+        token : Token,
         text: textmsg,
         channel: channelID
       }
@@ -83,13 +86,14 @@ function MsgOnSlack(textmsg, channelID) {
   {
     if(err)
       {
-        console.log("err");
+        console.log("error : " + err);
       }
       //console.log(res);
+      console.log(body);
 
   })
-  }
-  */
+}
+
 var controller = Botkit.slackbot(bot_options);
 
 controller.setupWebserver(3000, (err, webserver) => {
@@ -106,20 +110,21 @@ controller.setupWebserver(3000, (err, webserver) => {
       var Jiraid = req.body.issue.id;
       var path = req.body.issue.self;
       var end = path.indexOf('.');
-      //console.log(end);
       var Domain = path.slice(8, end);
 
       if (state !== "To Do") {
         console.log(state);
-        //console.log(Jiraid);
         console.log(Domain);
         res.send(req.body);
-        var idOfChannel = channel.findOne({jiraID : Jiraid, Domain : Domain },function(err, res){
+         channel.findOne({ domainName : Domain },function(err, res){
           if(err)
-            console.log(err);
+            {
+              console.log("err "+err);
+
+            }
           console.log(res);
+          MsgOnSlack("Issue "+projectkey+" Updated to "+state, res.channelID);
         });
-        //MsgOnSlack("Issue "+projectkey+" Updated to "+state, idOfChannel);
       }
     });
   }
