@@ -95,7 +95,7 @@ function MsgOnSlack(textmsg, channelID) {
 
 var controller = Botkit.slackbot(bot_options);
 
-controller.setupWebserver(3000, (err, webserver) => {
+controller.setupWebserver(process.env.PORT, (err, webserver) => {
   if (err) {
     console.log('Server Creation Error ! : ', err)
   } else {
