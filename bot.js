@@ -353,7 +353,7 @@ controller.on('dialog_submission', (bot, message) => {
 });
 
 controller.middleware.receive.use((bot, message, next) => {
-   //console.log(message);
+   console.log(message);
   if(message.command!==undefined || message.type==='dialog_submission'){ next();}
     var channelID = message.raw_message.event.channel;
     channel.findOne({'channelID': channelID}, (err, usr) => {
