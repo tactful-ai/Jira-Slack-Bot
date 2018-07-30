@@ -14,7 +14,7 @@ var outDateIssues = new cronJob('5 8 * * 0', function () {    //run job 8:05 eve
       if (err) { console.log("err", err); };
       if(data!=null){outDateIssues.start();}
     });
-    
+
   });
 
   console.log('cronjob started');
@@ -123,7 +123,7 @@ controller.setupWebserver(3000, (err, webserver) => {
 
             }
           console.log(res);
-          
+
           ("Issue "+projectkey+" Updated to "+state, res.channelID);
         });
       }
@@ -134,13 +134,13 @@ function findCreds(channelIDD){
   return new Promise(function(resolve,reject){
     channel.findOne({channelID:channelIDD},function(err,data){
       if(err){console.log(err);}
-      
+
       resolve(data);
      });
 
 
   });
-  
+
 }
 function determineIssueType(text){
   var textObj={type:'',text:''};
@@ -211,7 +211,7 @@ controller.on('file_share', function(bot, message) {
    picStream.on('close',function(){
      console.log("finished streaming");
      findCreds(message.event.channel).then(function(data){
-    
+
       domain=data.domainName;
       token=data.jiraEncodedToken;
      Jira.CreateIssue("JIRA",title,comment,typeObj.type, domain, token,addIssueDB,message.ts,message.event.channel,Jira.AddAttachment,destination_path).then((body) => {
@@ -243,10 +243,10 @@ function determineType(ReqBody,slackBot){
   var domain,token;
   var typeObj=determineIssueType(text);
   findCreds(channelIDD).then(function(dataa){
-    
+
     domain=dataa.domainName;
     token=dataa.jiraEncodedToken;
-  
+
     if(ReqBody.raw_message.event.bot_id!==undefined){
       //ignore
     }
@@ -254,7 +254,7 @@ function determineType(ReqBody,slackBot){
       console.log("you added a new comment");
       issue.findOne({messageID:threadTs, channelID:channelIDD},function(err,data){
         if(err){console.log(err);}
-      
+
         if(data!=null){
           Jira.AddComment(data.jiraID,text,domain, token,addCommentDB,eventTs,threadTs,channelIDD).then((body) => {
             botTalk.showMessage(body, ReqBody,controller);
@@ -315,10 +315,10 @@ function determineType(ReqBody,slackBot){
   else if(threadTs===undefined && text!==undefined && typeObj===null){
     botTalk.showMessage("No hashtag issue won't be posted to jira, you can use #bug or #story or #task or #epic",ReqBody,controller);
   }
-    
+
   });
-  
-    
+
+
 }
 
 //Start of the bot conversation
@@ -383,4 +383,3 @@ controller.middleware.receive.use((bot, message, next) => {
     });
   next();
 });
-
