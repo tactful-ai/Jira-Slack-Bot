@@ -4,7 +4,7 @@ var mongoose = require('mongoose');
 var http = require('http');
 var fs = require('fs');
 var request = require('request');
-env(__dirname + '/.env');
+// env(__dirname + '/.env');
 var Jira = require('./Jira');
 var cronJob = require('cron').CronJob;
 
