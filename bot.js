@@ -33,7 +33,8 @@ var issueSchema = mongoose.Schema({
   channelID: String,
   jiraID: String,
   messageID: String,
-  ts: Number
+  ts: Number,
+  Domain: String
 });
 var commentSchema = mongoose.Schema({
   channelID: String,
@@ -68,27 +69,26 @@ var bot_options = {
 bot_options.json_file_store = __dirname + '/.data/db/'; // store user data in a simple JSON format
 
 //Post message on slack when issue state updated
-function MsgOnSlack(textmsg) {
-  
-    var Slack = require('slack-node');
-    apiToken = "xoxb-391446264160-391919643092-4qqHlRZW1ELHuXqvzNcDKUQs";
-     
-    slack = new Slack(apiToken);
-    
-    slack.api('chat.postMessage', {
-      text: textmsg,
-      channel:'#general',
-    }, function(err, response){
-  
-      if(err)
-        {
-          console.log(err);
-        }
-  
-      console.log(response);
-    });
+/*
+function MsgOnSlack(textmsg, channelID) {
+      request.post({
+      url:"https://slack.com/api/chat.postMessage",
+      options: {
+        token : process.env.botToken,
+        text: textmsg,
+        channel: channelID
+      }
+    },function(err, res, body)
+  {
+    if(err)
+      {
+        console.log("err");
+      }
+      //console.log(res);
+
+  })
   }
-  
+  */
 var controller = Botkit.slackbot(bot_options);
 
 controller.setupWebserver(3000, (err, webserver) => {
@@ -98,14 +98,25 @@ controller.setupWebserver(3000, (err, webserver) => {
     controller.createWebhookEndpoints(webserver);
     controller.createOauthEndpoints(webserver);
 
-    ///
     webserver.post('/jiraAPI', function (req, res) {
       var projectkey = req.body.issue.key;
       var state = req.body.issue.fields.status.name;
+      var Jiraid = req.body.issue.id;
+      var path = req.body.issue.self;
+      var end = path.indexOf('.');
+      //console.log(end);
+      var Domain = path.slice(8, end);
+
       if (state !== "To Do") {
         console.log(state);
+        console.log(Domain);
         res.send(req.body);
-        MsgOnSlack("Issue "+projectkey+" Updated to "+state);
+        var idOfChannel = channel.findOne({jiraID : Jiraid, Domain : Domain },function(err, res){
+          if(err)
+            console.log(err);
+          console.log(res);
+        });
+        //MsgOnSlack("Issue "+projectkey+" Updated to "+state, idOfChannel);
       }
     });
   }
