@@ -49,6 +49,7 @@ exports.showMessage = (error, message,controller) => {
         console.log("MESSAGE CHANNEL ", message.channel)
         console.log("MESSAGE ",message)
         let token = data.bot.token
+        console.log("TOKEN ",token)
         let reqURL = `https://slack.com/api/chat.postEphemeral?token=${token}&channel=${message.channel}&text=${error}&user=${message.user}`
         request.post(reqURL, (err, res, body)=> {
           if (err){
