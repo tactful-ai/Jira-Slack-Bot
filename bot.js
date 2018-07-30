@@ -73,9 +73,8 @@ var bot_options = {
   studio_command_uri: process.env.studio_command_uri
 };
 bot_options.json_file_store = __dirname + '/.data/db/'; // store user data in a simple JSON format
-
-//Post message on slack when issue state updated
 /*
+//Post message on slack when issue state updated
 function MsgOnSlack(textmsg, channelID) {
       request.post({
       url:"https://slack.com/api/chat.postMessage",
@@ -104,6 +103,7 @@ controller.setupWebserver(3000, (err, webserver) => {
     controller.createWebhookEndpoints(webserver);
     controller.createOauthEndpoints(webserver);
 
+    ///
     webserver.post('/jiraAPI', function (req, res) {
       var projectkey = req.body.issue.key;
       var state = req.body.issue.fields.status.name;
@@ -115,6 +115,7 @@ controller.setupWebserver(3000, (err, webserver) => {
 
       if (state !== "To Do") {
         console.log(state);
+        //console.log(Jiraid);
         console.log(Domain);
         res.send(req.body);
         var idOfChannel = channel.findOne({jiraID : Jiraid, Domain : Domain },function(err, res){
