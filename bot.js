@@ -81,11 +81,7 @@ function MsgOnSlack(textmsg, channelID) {
   //console.log(Token);
       request.post({
       uri:`https://slack.com/api/chat.postMessage?token=${Token}&channel=${channelID}&text=${textmsg}`,
-      options: {
-        token : Token,
-        text: textmsg,
-        channel: channelID
-      }
+      
     },function(err, res, body)
   {
     if(err)
@@ -127,7 +123,8 @@ controller.setupWebserver(3000, (err, webserver) => {
 
             }
           console.log(res);
-          MsgOnSlack("Issue "+projectkey+" Updated to "+state, res.channelID);
+          
+          ("Issue "+projectkey+" Updated to "+state, res.channelID);
         });
       }
     });
@@ -314,6 +311,9 @@ function determineType(ReqBody,slackBot){
       botTalk.showErrorMessage(err.message, ReqBody,controller);
     });
     slackBot.replyInThread(ReqBody, "hi dude you added a new message");
+  }
+  else if(threadTs===undefined && text!==undefined && typeObj===null){
+    botTalk.showMessage("No hashtag issue won't be posted to jira, you can use #bug or #story or #task or #epic",ReqBody,controller);
   }
     
   });
