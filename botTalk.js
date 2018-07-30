@@ -2,10 +2,13 @@ var request=require('request');
 exports.slash=(function(controller){
     controller.hears(['help'],'direct_message,direct_mention,mention', function(bot, message) {
         console.log(message);
-       bot.reply(message,"Hello <@"+message.user +"> i'm here to help delivering your issues to jira");
+       bot.reply(message,"Hello <@"+message.user +"> i'm here to help delivering your issues to jira and notify you with changes");
       });
       controller.hears(['hello', 'hi'],'direct_message,direct_mention,mention', function(bot, message) {
        bot.reply(message,"Greetings Master");
+
+       
+
       
       });
 
@@ -50,9 +53,9 @@ exports.showMessage = (error, message,controller) => {
           } else {
             console.log('BODY', body)
           }
-        })
+        });
       }
-    })
+    });
   }
   
   exports.showErrorMessage = (error, message,controller) => {
@@ -106,9 +109,9 @@ exports.showMessage = (error, message,controller) => {
           } else {
             console.log('BODY', body)
           }
-        })
+        });
       }
-    })
+    });
   }
   
 
