@@ -7,6 +7,7 @@ var request = require('request');
 env(__dirname + '/.env');
 var Jira = require('./Jira');
 var cronJob = require('cron').CronJob;
+
 var outDateIssues = new cronJob('5 8 * * 0', function () {    //run job 8:05 every sunday
   issue.deleteMany({
     ts: { $lte: ((Date.now() / (1000 * 60)) - 43200) },
@@ -24,6 +25,7 @@ mongoose.connect(process.env.dbString,
   }
 );
 var db = mongoose.connection;
+
 var channelSchema = mongoose.Schema({
   channelID: String,
   jiraEncodedToken: String,
@@ -34,7 +36,7 @@ var issueSchema = mongoose.Schema({
   jiraID: String,
   messageID: String,
   ts: Number,
-  Domain: String
+  domain: String
 });
 var commentSchema = mongoose.Schema({
   channelID: String,
@@ -143,12 +145,13 @@ function determineIssueType(text){
 
 }
 
-function addIssueDB(jiraIDD,messageIDD,channelIDD){
+function addIssueDB(jiraIDD,messageIDD,channelIDD,domain){
   var newMesage=new issue({
     jiraID:jiraIDD,
     messageID:messageIDD,
     ts:Math.round((Date.now()/(1000*60))),   // date in minutes
-    channelID:channelIDD
+    channelID:channelIDD,
+    domain:domain
     });
     newMesage.save(function(err,newq){
       if(err){console.log(err,'err')};
