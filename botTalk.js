@@ -46,6 +46,7 @@ exports.showMessage = (error, message,controller) => {
         console.log('Cannot get team data !', err)
       } else {
         console.log("MESSAGE USER ", message.user)
+        console.log("MESSAGE CHANNEL ", message.channel)
         console.log("MESSAGE ",message)
         let token = data.bot.token
         let reqURL = `https://slack.com/api/chat.postEphemeral?token=${token}&channel=${message.channel}&text=${error}&user=${message.user}`
