@@ -24,8 +24,7 @@ exports.CreateIssue =function (projectName, summary, description, issuetype, dom
           
         }
         , function(error, response, body) {
-          console.log(body);
-          console.log(error);
+          
           if(error)
             {
                 console.log(error, null);
