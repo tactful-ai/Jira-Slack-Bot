@@ -81,11 +81,6 @@ function MsgOnSlack(textmsg, channelID) {
   //console.log(Token);
       request.post({
       uri:`https://slack.com/api/chat.postMessage?token=${Token}&channel=${channelID}&text=${textmsg}`,
-      options: {
-        token : Token,
-        text: textmsg,
-        channel: channelID
-      }
     },function(err, res, body)
   {
     if(err)
