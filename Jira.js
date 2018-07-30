@@ -37,11 +37,11 @@ exports.CreateIssue =function (projectName, summary, description, issuetype, dom
                 console.log(body);
                 if(typeof callBackAttach==='function'){
                     callBackAttach(body.key,path,domain,Token);
-                    callBackDB(body.id,messageID,channelID);
+                    callBackDB(body.id,messageID,channelID,domain);
     
                 }
                 else {
-                    callBackDB(body.id,messageID,channelID);
+                    callBackDB(body.id,messageID,channelID,domain);
                 }
                 resolve("Issue Created !");
             }
