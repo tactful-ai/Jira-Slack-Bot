@@ -12,13 +12,15 @@ var mongodbBotkit = require('botkit-storage-mongo')({mongoUri: process.env.dbStr
 var outDateIssues = new cronJob('5 8 * * 0', function () {    //run job 8:05 every sunday to delete outdated issues and comments
   issue.findOneAndRemove({ts: { $lte: ((Date.now() / (1000 * 60)) - 43200) }},function(err,data){
     comment.deleteMany({threadID:data.messageID},function(err){
-      if (err) { console.log("err", err); };
+      if (err) { 
+        // console.log("err", err);
+      };
       if(data!=null){outDateIssues.start();}
     });
 
   });
 
-  console.log('cronjob started');
+  // console.log('cronjob started');
 
 },null,true,'Africa/Cairo');
 
@@ -88,10 +90,10 @@ function MsgOnSlack(textmsg, channelID) {
   {
     if(err)
       {
-        console.log("error : " + err);
+        // console.log("error : " + err);
       }
       //console.log(res);
-      console.log(body);
+      // console.log(body);
 
   })
 }
@@ -100,7 +102,7 @@ var controller = Botkit.slackbot(bot_options);
 
 controller.setupWebserver(process.env.PORT, (err, webserver) => {
   if (err) {
-    console.log('Server Creation Error ! : ', err)
+    // console.log('Server Creation Error ! : ', err)
   } else {
     controller.createWebhookEndpoints(webserver);
     controller.createOauthEndpoints(webserver);
@@ -115,16 +117,16 @@ controller.setupWebserver(process.env.PORT, (err, webserver) => {
       var Domain = path.slice(8, end);
 
       if (state !== "To Do") {
-        console.log(state);
-        console.log(Domain);
+        // console.log(state);
+        // console.log(Domain);
         res.send(req.body);
          channel.findOne({ domainName : Domain },function(err, res){
           if(err)
             {
-              console.log("err "+err);
+              // console.log("err "+err);
 
             }
-          console.log(res);
+          // console.log(res);
 
           ("Issue "+projectkey+" Updated to "+state, res.channelID);
         });
@@ -163,8 +165,10 @@ function addIssueDB(jiraIDD,messageIDD,channelIDD,domain){
     domain:domain
     });
     newMesage.save(function(err,newq){
-      if(err){console.log(err,'err')};
-      console.log(newq,"newq");
+      if(err){
+        // console.log(err,'err')
+      };
+      // console.log(newq,"newq");
     });
 
 }
@@ -176,11 +180,15 @@ function addCommentDB(commentIDD,jiraCommentIDD,threadID,channelIDD){
     threadID:threadID
    });
    newComment.save(function(err,newc){
-   if(err){console.log(err,'err');}
-   console.log(newc);
+   if(err){
+    //  console.log(err,'err');
+    }
+  //  console.log(newc);
 
     issue.findOneAndUpdate({ messageID: threadID }, { ts: (Date.now() / (1000 * 60)) }, function (err, data) { //update thread ts
-      if (err) { console.log(err); }
+      if (err) {
+        // console.log(err);
+      }
     });
 
   });
@@ -192,7 +200,7 @@ function addCommentDB(commentIDD,jiraCommentIDD,threadID,channelIDD){
 
 controller.on('file_share', function(bot, message) {
 
-  console.log(message);
+  // console.log(message);
   var destination_path = message.files[0].name;
   var url = message.files[0].url_private;
   var title=message.files[0].title;
@@ -211,7 +219,7 @@ controller.on('file_share', function(bot, message) {
   };
    var picStream=fs.createWriteStream(destination_path);
    picStream.on('close',function(){
-     console.log("finished streaming");
+    //  console.log("finished streaming");
      findCreds(message.event.channel).then(function(data){
 
       domain=data.domainName;
@@ -226,7 +234,7 @@ controller.on('file_share', function(bot, message) {
   request(options, function(err, res, body) {
       // body contains the content
       bot.replyInThread(message, 'You posted an issue with an image');
-      console.log('FILE RETRIEVE STATUS', res.statusCode);
+      // console.log('FILE RETRIEVE STATUS', res.statusCode);
     }).pipe(picStream); // pipe output to filesystem
   }
 });
@@ -253,9 +261,11 @@ function determineType(ReqBody,slackBot){
       //ignore
     }
     else if(typeof threadTs!=='undefined' ){     //reply on thread not a new issue
-      console.log("you added a new comment");
+      // console.log("you added a new comment");
       issue.findOne({messageID:threadTs, channelID:channelIDD},function(err,data){
-        if(err){console.log(err);}
+        if(err){
+          // console.log(err);
+        }
 
         if(data!=null){
           Jira.AddComment(data.jiraID,text,domain, token,addCommentDB,eventTs,threadTs,channelIDD).then((body) => {
@@ -278,7 +288,7 @@ function determineType(ReqBody,slackBot){
     });
   } else if (typeof previousMessage!=='undefined' && typeof previousMessage.thread_ts!=='undefined' && messageRaw.reply_count===undefined){
     issue.findOne({messageID:previousMessage.thread_ts},function(err,dataI){
-      console.log(previousMessage.ts,'heree');
+      // console.log(previousMessage.ts,'heree');
       comment.findOne({commentID:previousMessage.ts,channelID:channelIDD},function(err,dataC){
         Jira.EditComment(dataI.jiraID,dataC.jiraCommentID,messageRaw.text,domain, token).then((body) => {
           botTalk.showMessage(body, ReqBody,controller);
@@ -288,7 +298,7 @@ function determineType(ReqBody,slackBot){
       });
     });
   } else if (subType==='message_deleted' ||( messageRaw!=undefined && messageRaw.subtype==='tombstone')){
-    console.log("message deleted");
+    // console.log("message deleted");
     issue.findOneAndRemove({messageID:previousMessage.ts,channelID:channelIDD},function(err,data){
         Jira.DeleteIssue(data.jiraID,domain, token).then((body) => {
           botTalk.showMessage(body, ReqBody,controller);
@@ -298,15 +308,15 @@ function determineType(ReqBody,slackBot){
 
     });
     //issue.deleteOne({messageID:previousMessage.ts},function(err)
-    console.log("Deleted from db");
+    // console.log("Deleted from db");
   } else if (subType === 'message_changed' && messageRaw.text !== previousMessage.text) {
-    console.log("message changed", subType, ReqBody.raw_message.event.bot_id);
+    // console.log("message changed", subType, ReqBody.raw_message.event.bot_id);
     //threadTs=messageRaw.thread_ts;
     slackBot.replyInThread(ReqBody, "hi dude you edited this messsage");
   } else if (subType === 'file_share') {
     //do nothing slack controller will handle this
   } else if(threadTs===undefined && text!==undefined && typeObj!==null){ //recieve a message without file
-    console.log("New message recieved");
+    // console.log("New message recieved");
     Jira.CreateIssue("JIRA",typeObj.text,typeObj.text,typeObj.type, domain, token,addIssueDB,eventTs,channelIDD).then((body) => {
       botTalk.showMessage(body, ReqBody,controller);
     }).catch((err) => {
