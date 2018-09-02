@@ -147,8 +147,10 @@ function findCreds(channelIDD){
 
 }
 function determineIssueType(text){
+  console.log(text)
   var textObj={type:'',text:''};
-  if(/#bug/.test(text)){ textObj.type='Bug'; textObj.text=text.replace('#Bug',' ');  return textObj;}
+  text.contains('#bug')
+  if(text.contains('#bug')){ textObj.type='Bug'; textObj.text=text.replace('#Bug','');  return textObj;}
   else if(/#task/.test(text)){textObj.type='Task'; textObj.text=text.replace('#task',' '); return textObj;}
   else if(/#story/.test(text)){textObj.type='Story'; textObj.text=text.replace('#story',' '); return textObj;}
   else if(/#epic/.test(text)){textObj.type='Epic'; textObj.text=text.replace('#epic',' '); return textObj;}
@@ -259,8 +261,7 @@ function determineType(ReqBody,slackBot){
 
     if(ReqBody.raw_message.event.bot_id!==undefined){
       //ignore
-    }
-    else if(typeof threadTs!=='undefined' ){     //reply on thread not a new issue
+    } else if (typeof threadTs!=='undefined' ) {     //reply on thread not a new issue
       // console.log("you added a new comment");
       issue.findOne({messageID:threadTs, channelID:channelIDD},function(err,data){
         if(err){
@@ -275,63 +276,58 @@ function determineType(ReqBody,slackBot){
           });
         }
       });
-    }
-    else if(typeof previousMessage!=='undefined' && typeof previousMessage.thread_ts!=='undefined' && subType==='message_deleted'){
-    issue.findOne({messageID:previousMessage.thread_ts,channelID:channelIDD},function(err,dataI){
-      comment.findOneAndRemove({commentID:previousMessage.ts,channelID:channelIDD},function(err,dataC){
-        Jira.DeleteComment(dataI.jiraID,dataC.jiraCommentID,domain, token).then((body) => {
-          botTalk.showMessage(body, ReqBody,controller);
-        }).catch((err) => {
+    } else if (typeof previousMessage!=='undefined' && typeof previousMessage.thread_ts!=='undefined' && subType==='message_deleted'){
+      issue.findOne({messageID:previousMessage.thread_ts,channelID:channelIDD},function(err,dataI){
+        comment.findOneAndRemove({commentID:previousMessage.ts,channelID:channelIDD},function(err,dataC){
+          Jira.DeleteComment(dataI.jiraID,dataC.jiraCommentID,domain, token).then((body) => {
+            botTalk.showMessage(body, ReqBody,controller);
+          }).catch((err) => {
+            botTalk.showErrorMessage(err, ReqBody,controller);
+          });
+        });
+      });
+    } else if (typeof previousMessage!=='undefined' && typeof previousMessage.thread_ts!=='undefined' && messageRaw.reply_count===undefined){
+      issue.findOne({messageID:previousMessage.thread_ts},function(err,dataI){
+        // console.log(previousMessage.ts,'heree');
+        comment.findOne({commentID:previousMessage.ts,channelID:channelIDD},function(err,dataC){
+          Jira.EditComment(dataI.jiraID,dataC.jiraCommentID,messageRaw.text,domain, token).then((body) => {
+            botTalk.showMessage(body, ReqBody,controller);
+          }).catch((err) => {
+          botTalk.showErrorMessage(err.message, ReqBody);
+          });
+        });
+      });
+    } else if (subType==='message_deleted' ||( messageRaw!=undefined && messageRaw.subtype==='tombstone')){
+      // console.log("message deleted");
+      issue.findOneAndRemove({messageID:previousMessage.ts,channelID:channelIDD},function(err,data){
+          Jira.DeleteIssue(data.jiraID,domain, token).then((body) => {
+            botTalk.showMessage(body, ReqBody,controller);
+          }).catch((err) => {
           botTalk.showErrorMessage(err, ReqBody,controller);
         });
-      });
-    });
-  } else if (typeof previousMessage!=='undefined' && typeof previousMessage.thread_ts!=='undefined' && messageRaw.reply_count===undefined){
-    issue.findOne({messageID:previousMessage.thread_ts},function(err,dataI){
-      // console.log(previousMessage.ts,'heree');
-      comment.findOne({commentID:previousMessage.ts,channelID:channelIDD},function(err,dataC){
-        Jira.EditComment(dataI.jiraID,dataC.jiraCommentID,messageRaw.text,domain, token).then((body) => {
-          botTalk.showMessage(body, ReqBody,controller);
-        }).catch((err) => {
-        botTalk.showErrorMessage(err.message, ReqBody);
-        });
-      });
-    });
-  } else if (subType==='message_deleted' ||( messageRaw!=undefined && messageRaw.subtype==='tombstone')){
-    // console.log("message deleted");
-    issue.findOneAndRemove({messageID:previousMessage.ts,channelID:channelIDD},function(err,data){
-        Jira.DeleteIssue(data.jiraID,domain, token).then((body) => {
-          botTalk.showMessage(body, ReqBody,controller);
-        }).catch((err) => {
-        botTalk.showErrorMessage(err, ReqBody,controller);
-      });
 
-    });
-    //issue.deleteOne({messageID:previousMessage.ts},function(err)
-    // console.log("Deleted from db");
-  } else if (subType === 'message_changed' && messageRaw.text !== previousMessage.text) {
-    // console.log("message changed", subType, ReqBody.raw_message.event.bot_id);
-    //threadTs=messageRaw.thread_ts;
-    slackBot.replyInThread(ReqBody, "hi dude you edited this messsage");
-  } else if (subType === 'file_share') {
-    //do nothing slack controller will handle this
-  } else if(threadTs===undefined && text!==undefined && typeObj!==null){ //recieve a message without file
-    // console.log("New message recieved");
-    Jira.CreateIssue("JIRA",typeObj.text,typeObj.text,typeObj.type, domain, token,addIssueDB,eventTs,channelIDD).then((body) => {
-      console.log("Created ")
-      botTalk.showMessage(body, ReqBody,controller);
-    }).catch((err) => {
-      botTalk.showErrorMessage(err.message, ReqBody,controller);
-    });
-    slackBot.replyInThread(ReqBody, "hi dude you added a new message");
-  }
-  else if(threadTs===undefined && text!==undefined && typeObj===null){
-    botTalk.showMessage("No hashtag issue won't be posted to jira, you can use #bug or #story or #task or #epic",ReqBody,controller);
-  }
-
+      });
+      //issue.deleteOne({messageID:previousMessage.ts},function(err)
+      // console.log("Deleted from db");
+    } else if (subType === 'message_changed' && messageRaw.text !== previousMessage.text) {
+      // console.log("message changed", subType, ReqBody.raw_message.event.bot_id);
+      //threadTs=messageRaw.thread_ts;
+      slackBot.replyInThread(ReqBody, "hi dude you edited this messsage");
+    } else if (subType === 'file_share') {
+      //do nothing slack controller will handle this
+    } else if(threadTs===undefined && text!==undefined && typeObj!==null){ //recieve a message without file
+      // console.log("New message recieved");
+      Jira.CreateIssue("JIRA",typeObj.text,typeObj.text,typeObj.type, domain, token,addIssueDB,eventTs,channelIDD).then((body) => {
+        console.log("Created ")
+        botTalk.showMessage(body, ReqBody,controller);
+      }).catch((err) => {
+        botTalk.showErrorMessage(err.message, ReqBody,controller);
+      });
+      slackBot.replyInThread(ReqBody, "hi dude you added a new message");
+    } else if(threadTs===undefined && text!==undefined && typeObj===null){
+      botTalk.showMessage("No hashtag issue won't be posted to jira, you can use #bug or #story or #task or #epic",ReqBody,controller);
+    }
   });
-
-
 }
 
 //Start of the bot conversation
