@@ -147,7 +147,8 @@ function findCreds(channelIDD){
 
 }
 function determineIssueType(text){
-  console.log(text)
+  console.log("Text" , text)
+  console.log("Check", text.includes('#bug'))
   var textObj={type:'',text:''};
   if(text.includes('#bug')){ textObj.type='Bug'; textObj.text=text.replace('#Bug','');  return textObj;}
   else if(/#task/.test(text)){textObj.type='Task'; textObj.text=text.replace('#task',' '); return textObj;}
