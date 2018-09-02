@@ -51,7 +51,8 @@ exports.showMessage = (error, message,controller) => {
           if (err){
             console.log('ERR', err)
           } else {
-            console.log('BODY !! ', body)
+            console.log(error)
+            // console.log('BODY !! ', body)
           }
         });
       }
