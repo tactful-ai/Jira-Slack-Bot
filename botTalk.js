@@ -25,17 +25,12 @@ exports.slash=(function(controller){
         });
       });
 
-      controller.middleware.receive.use((bot, message, next) => {
-        if (message.type === 'dialog_submission') {
-          console.log('Catched Dialog Reply ! ', message);
-        }
-        next();
-      });
-
-
-
-      
-
+      // controller.middleware.receive.use((bot, message, next) => {
+      //   if (message.type === 'dialog_submission') {
+      //     console.log('Catched Dialog Reply ! ', message);
+      //   }
+      //   next();
+      // });
 });
 
 
