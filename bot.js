@@ -318,6 +318,7 @@ function determineType(ReqBody,slackBot){
   } else if(threadTs===undefined && text!==undefined && typeObj!==null){ //recieve a message without file
     // console.log("New message recieved");
     Jira.CreateIssue("JIRA",typeObj.text,typeObj.text,typeObj.type, domain, token,addIssueDB,eventTs,channelIDD).then((body) => {
+      console.log("Created ")
       botTalk.showMessage(body, ReqBody,controller);
     }).catch((err) => {
       botTalk.showErrorMessage(err.message, ReqBody,controller);
