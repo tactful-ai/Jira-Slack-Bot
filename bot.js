@@ -7,6 +7,7 @@ var request = require('request');
 // env(__dirname + '/.env');
 var Jira = require('./Jira');
 var cronJob = require('cron').CronJob;
+var mongodbBotkit = require('botkit-storage-mongo')({mongoUri: process.env.dbString })
 
 var outDateIssues = new cronJob('5 8 * * 0', function () {    //run job 8:05 every sunday to delete outdated issues and comments
   issue.findOneAndRemove({ts: { $lte: ((Date.now() / (1000 * 60)) - 43200) }},function(err,data){
@@ -72,7 +73,7 @@ var bot_options = {
   studio_token: process.env.studio_token,
   studio_command_uri: process.env.studio_command_uri
 };
-bot_options.json_file_store = __dirname + '/.data/db/'; // store user data in a simple JSON format
+// bot_options.json_file_store = __dirname + '/.data/db/'; // store user data in a simple JSON format
 
 //Post message on slack when issue state updated
 
