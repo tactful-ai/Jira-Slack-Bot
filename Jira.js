@@ -47,6 +47,7 @@ exports.CreateIssue =function (projectName, summary, description, issuetype, dom
             }
         if (response.statusCode === 400)
             {
+                console.log(body)
                 console.log(response.statusCode + ':  error.');
                 reject(new Error('Something Went Wrong'));
             };
