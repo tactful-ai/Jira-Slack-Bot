@@ -13,7 +13,7 @@ exports.CreateIssue =function (projectName, summary, description, issuetype, dom
             body:{
             "fields": {
               "project":{
-                 "key": projectName
+                 "key": "JANUS"
               },
               "summary": summary,
               "description": description,

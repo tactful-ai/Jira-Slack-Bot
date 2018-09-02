@@ -323,7 +323,7 @@ function determineType(ReqBody,slackBot){
       }).catch((err) => {
         botTalk.showErrorMessage(err.message, ReqBody,controller);
       });
-      slackBot.replyInThread(ReqBody, "hi dude you added a new message");
+      // slackBot.replyInThread(ReqBody, "hi dude you added a new message");
     } else if(threadTs===undefined && text!==undefined && typeObj===null){
       botTalk.showMessage("No hashtag issue won't be posted to jira, you can use #bug or #story or #task or #epic",ReqBody,controller);
     }
