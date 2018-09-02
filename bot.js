@@ -255,7 +255,7 @@ function determineType(ReqBody,slackBot){
   var domain,token;
   var typeObj=determineIssueType(text);
   findCreds(channelIDD).then(function(dataa){
-
+    console.log(dataa)
     domain=dataa.domainName;
     token=dataa.jiraEncodedToken;
 
