@@ -6,6 +6,7 @@ var fs = require('fs');
 exports.CreateIssue =function (projectName, summary, description, issuetype, domain, Token,callBackDB,messageID,channelID,callBackAttach,path)
 {   
     return new Promise((resolve, reject) => {
+        console.log(domain)
         request({
             headers:{Authorization: Token},
           uri: `https://${domain}.atlassian.net/rest/api/2/issue`,
@@ -27,7 +28,7 @@ exports.CreateIssue =function (projectName, summary, description, issuetype, dom
           
           if(error)
             {
-                console.log(error, null);
+                console.log(error);
                 reject("Connection Error!");
             }
         if (response.statusCode === 201)
